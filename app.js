@@ -404,16 +404,25 @@ function switchToInvoiceMode() {
 function logoutInvoiceAdmin() {
   state.invoiceAuth.isAuthenticated = false;
   localStorage.removeItem('mg_invoice_auth');
+  sessionStorage.removeItem('mg_invoice_auth');
 
   // 1. Ocultar facturación
   const factView = document.getElementById('view-facturacion');
-  if (factView) factView.style.display = 'none';
+  if (factView) {
+    factView.style.display = 'none';
+  }
 
-  // 2. Restaurar la barra de navegación pública en la parte azul superior
+  // 2. Restaurar inmediatamente la barra de navegación pública en la parte azul superior
   const publicNav = document.getElementById('public-top-nav-bar');
   const invoiceNav = document.getElementById('invoice-top-nav-bar');
-  if (publicNav) publicNav.style.display = 'block';
-  if (invoiceNav) invoiceNav.style.display = 'none';
+  if (publicNav) {
+    publicNav.style.display = 'block';
+    publicNav.style.visibility = 'visible';
+  }
+  if (invoiceNav) {
+    invoiceNav.style.display = 'none';
+    invoiceNav.style.visibility = 'hidden';
+  }
 
   // 3. Actualizar botones de cabecera superior
   const btnHeaderLogin = document.getElementById('btn-header-login');
@@ -997,94 +1006,107 @@ function setupEventListeners() {
 
 // 1. Restablecer valores y limpiar el cotizador completo a cero
 function resetQuoterValues() {
-  // Poner a 0 las cantidades del inventario
-  Object.keys(state.items).forEach(id => {
-    state.items[id].qty = 0;
-  });
-  state.customItems = [];
+  try {
+    // Poner a 0 las cantidades del inventario en todas las estancias
+    if (state.rooms && Array.isArray(state.rooms)) {
+      state.rooms.forEach(room => {
+        if (room.items && Array.isArray(room.items)) {
+          room.items.forEach(item => {
+            item.qty = 0;
+          });
+        }
+      });
+    }
+    state.customItems = [];
 
-  // Limpiar campos del cliente
-  state.client = {
-    name: '',
-    phone: '',
-    email: '',
-    date: new Date().toISOString().split('T')[0],
-    origin: '28001 - Madrid',
-    destination: '28004 - Madrid',
-    notes: '',
-    originFloor: 0,
-    destFloor: 0,
-    serviceDate: new Date().toISOString().split('T')[0]
-  };
+    // Limpiar campos del cliente
+    state.client = {
+      name: '',
+      phone: '',
+      email: '',
+      date: new Date().toISOString().split('T')[0],
+      origin: '28001 - Madrid (Barrio Salamanca)',
+      destination: '28004 - Madrid (Centro / Malasaña)',
+      notes: '',
+      originFloor: 0,
+      destFloor: 0,
+      serviceDate: new Date().toISOString().split('T')[0]
+    };
 
-  const clientName = document.getElementById('client-name');
-  const clientPhone = document.getElementById('client-phone');
-  const clientEmail = document.getElementById('client-email');
-  const clientDate = document.getElementById('client-date');
-  const clientNotes = document.getElementById('client-notes');
-  const clientOrigin = document.getElementById('client-origin');
-  const clientDest = document.getElementById('client-destination');
+    const clientName = document.getElementById('client-name');
+    const clientPhone = document.getElementById('client-phone');
+    const clientEmail = document.getElementById('client-email');
+    const clientDate = document.getElementById('client-date');
+    const clientNotes = document.getElementById('client-notes');
+    const clientOrigin = document.getElementById('client-origin');
+    const clientDest = document.getElementById('client-destination');
 
-  if (clientName) clientName.value = '';
-  if (clientPhone) clientPhone.value = '';
-  if (clientEmail) clientEmail.value = '';
-  if (clientDate) clientDate.value = new Date().toISOString().split('T')[0];
-  if (clientNotes) clientNotes.value = '';
-  if (clientOrigin) clientOrigin.value = '28001 - Madrid (Barrio Salamanca)';
-  if (clientDest) clientDest.value = '28004 - Madrid (Centro / Malasaña)';
+    if (clientName) clientName.value = '';
+    if (clientPhone) clientPhone.value = '';
+    if (clientEmail) clientEmail.value = '';
+    if (clientDate) clientDate.value = new Date().toISOString().split('T')[0];
+    if (clientNotes) clientNotes.value = '';
+    if (clientOrigin) clientOrigin.value = '28001 - Madrid (Barrio Salamanca)';
+    if (clientDest) clientDest.value = '28004 - Madrid (Centro / Malasaña)';
 
-  // Restablecer accesos, plantas y ascensor
-  state.hasElevator = true;
-  state.accessFloor = 0;
-  state.packingService = false;
-  state.disassemblyService = false;
-  state.manualTruckOverride = false;
-  state.manualStaffOverride = false;
+    // Restablecer accesos, plantas y ascensor
+    state.hasElevator = true;
+    state.accessFloor = 0;
+    state.packingService = false;
+    state.disassemblyService = false;
+    state.manualTruckOverride = false;
+    state.manualStaffOverride = false;
 
-  const selectElevator = document.getElementById('select-elevator');
-  const selectFloor = document.getElementById('select-floor');
-  const checkPacking = document.getElementById('check-packing');
-  const checkDisassembly = document.getElementById('check-disassembly');
+    const selectElevator = document.getElementById('select-elevator');
+    const selectFloor = document.getElementById('select-floor');
+    const checkPacking = document.getElementById('check-packing');
+    const checkDisassembly = document.getElementById('check-disassembly');
 
-  if (selectElevator) selectElevator.value = 'yes';
-  if (selectFloor) selectFloor.value = '0';
-  if (checkPacking) checkPacking.checked = false;
-  if (checkDisassembly) checkDisassembly.checked = false;
+    if (selectElevator) selectElevator.value = 'yes';
+    if (selectFloor) selectFloor.value = '0';
+    if (checkPacking) checkPacking.checked = false;
+    if (checkDisassembly) checkDisassembly.checked = false;
 
-  // Restablecer ajuste de precio final
-  state.isCustomTotalActive = false;
-  state.customGrandTotal = 0;
-  const checkCustomTotal = document.getElementById('check-custom-total');
-  const customTotalGroup = document.getElementById('custom-total-group');
-  const inputCustomTotal = document.getElementById('input-custom-total');
-  if (checkCustomTotal) checkCustomTotal.checked = false;
-  if (customTotalGroup) customTotalGroup.style.display = 'none';
-  if (inputCustomTotal) inputCustomTotal.value = '';
+    // Restablecer ajuste de precio final
+    state.isCustomTotalActive = false;
+    state.customGrandTotal = 0;
+    const checkCustomTotal = document.getElementById('check-custom-total');
+    const customTotalGroup = document.getElementById('custom-total-group');
+    const inputCustomTotal = document.getElementById('input-custom-total');
+    if (checkCustomTotal) checkCustomTotal.checked = false;
+    if (customTotalGroup) customTotalGroup.style.display = 'none';
+    if (inputCustomTotal) inputCustomTotal.value = '';
 
-  // Restablecer opciones de Solo Transporte
-  state.transportTrucksQty = 1;
-  state.priceTransportPerTruck = 280;
-  state.transportHelpersQty = 1;
-  state.transportHelperPrice = 60;
-  state.transportHasDriver = true;
-  state.transportDriverPrice = 40;
-  state.transportHasBoxes = false;
-  state.transportBoxesPrice = 35;
-  state.transportCargoUnits = '';
-  state.transportWeightKg = '';
+    // Restablecer opciones de Solo Transporte
+    state.transportTrucksQty = 1;
+    state.priceTransportPerTruck = 280;
+    state.transportHelpersQty = 1;
+    state.transportHelperPrice = 60;
+    state.transportHasDriver = true;
+    state.transportDriverPrice = 40;
+    state.transportHasBoxes = false;
+    state.transportBoxesPrice = 35;
+    state.transportCargoUnits = '';
+    state.transportWeightKg = '';
 
-  const inputTruckPrice = document.getElementById('price-transport-per-truck');
-  const inputCargoUnits = document.getElementById('transport-cargo-units');
-  const inputCargoWeight = document.getElementById('transport-cargo-weight');
-  if (inputTruckPrice) inputTruckPrice.value = '280';
-  if (inputCargoUnits) inputCargoUnits.value = '';
-  if (inputCargoWeight) inputCargoWeight.value = '';
+    const inputTrucks = document.getElementById('input-transport-trucks');
+    const inputTruckPrice = document.getElementById('price-transport-per-truck');
+    const inputCargoUnits = document.getElementById('transport-cargo-units');
+    const inputCargoWeight = document.getElementById('transport-cargo-weight');
+    if (inputTrucks) inputTrucks.value = '1';
+    if (inputTruckPrice) inputTruckPrice.value = '280';
+    if (inputCargoUnits) inputCargoUnits.value = '';
+    if (inputCargoWeight) inputCargoWeight.value = '';
 
-  renderItems();
-  recalculateLogistics();
-  updateCalculations();
+    renderRoomTabs();
+    renderItems();
+    recalculateLogistics();
+    updateCalculations();
 
-  alert('Valores del cotizador restablecidos correctamente a cero.');
+    alert('Valores del cotizador restablecidos correctamente a cero.');
+  } catch (err) {
+    console.error('Error al restablecer valores:', err);
+  }
 }
 
 // 2. Exportar presupuestos filtrados a formato Excel (.CSV compatible con Excel)
@@ -2385,13 +2407,6 @@ function checkInvoiceAuthState() {
     if (btnHeaderLogin) btnHeaderLogin.style.display = 'inline-flex';
     if (headerAuthUser) headerAuthUser.style.display = 'none';
   }
-}
-
-function logoutInvoiceAdmin() {
-  state.invoiceAuth.isAuthenticated = false;
-  localStorage.removeItem('mg_invoice_auth');
-  checkInvoiceAuthState();
-  switchMainTab('cotizador');
 }
 
 function renderInvoiceItems() {

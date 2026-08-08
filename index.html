@@ -892,12 +892,12 @@
         <form id="form-invoice-login" style="text-align: left;">
           <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-label" for="input-login-user" style="font-weight: 600;"><i class="fa-solid fa-user"></i> Usuario Administrativo</label>
-            <input type="text" id="input-login-user" class="form-input" placeholder="Ej: carlos o admin" value="carlos" required style="padding: 0.75rem 0.9rem; font-size: 0.95rem;">
+            <input type="text" id="input-login-user" class="form-input" placeholder="Ingrese su usuario..." value="" required style="padding: 0.75rem 0.9rem; font-size: 0.95rem;">
           </div>
 
           <div class="form-group" style="margin-bottom: 1.2rem;">
             <label class="form-label" for="input-login-pass" style="font-weight: 600;"><i class="fa-solid fa-key"></i> Contraseña de Acceso</label>
-            <input type="password" id="input-login-pass" class="form-input" placeholder="Ingrese contraseña..." value="mg2026" required style="padding: 0.75rem 0.9rem; font-size: 0.95rem;">
+            <input type="password" id="input-login-pass" class="form-input" placeholder="Ingrese su contraseña..." value="" required style="padding: 0.75rem 0.9rem; font-size: 0.95rem;">
           </div>
 
           <div id="login-error-msg" style="color: var(--danger); font-size: 0.84rem; font-weight: 600; display: none; margin-bottom: 1rem; background: #FEE2E2; padding: 0.5rem; border-radius: 6px;">
@@ -908,10 +908,6 @@
             <i class="fa-solid fa-unlock-keyhole"></i> Iniciar Sesión en Facturación
           </button>
         </form>
-
-        <div style="background: #F8FAFC; border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 1.5rem; font-size: 0.78rem; color: var(--text-muted);">
-          <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Credenciales predeterminadas: <strong>carlos</strong> / clave: <strong>mg2026</strong>
-        </div>
       </div>
     </div>
 
@@ -1303,22 +1299,18 @@
       <form id="form-invoice-modal-login" onsubmit="event.preventDefault(); document.getElementById('form-invoice-login').dispatchEvent(new Event('submit'));">
         <div class="form-group" style="margin-bottom: 0.9rem;">
           <label class="form-label" for="modal-input-user"><i class="fa-solid fa-user"></i> Usuario Administrativo</label>
-          <input type="text" id="modal-input-user" class="form-input" placeholder="carlos" value="carlos" required oninput="document.getElementById('input-login-user').value = this.value">
+          <input type="text" id="modal-input-user" class="form-input" placeholder="Ingrese su usuario..." value="" required oninput="document.getElementById('input-login-user').value = this.value">
         </div>
 
         <div class="form-group" style="margin-bottom: 1.2rem;">
           <label class="form-label" for="modal-input-pass"><i class="fa-solid fa-key"></i> Contraseña de Acceso</label>
-          <input type="password" id="modal-input-pass" class="form-input" placeholder="mg2026" value="mg2026" required oninput="document.getElementById('input-login-pass').value = this.value">
+          <input type="password" id="modal-input-pass" class="form-input" placeholder="Ingrese su contraseña..." value="" required oninput="document.getElementById('input-login-pass').value = this.value">
         </div>
 
         <button type="submit" class="btn-export-pdf" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
           <i class="fa-solid fa-unlock"></i> Desbloquear Módulo
         </button>
       </form>
-
-      <div style="background: #F8FAFC; border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 0.65rem; margin-top: 1.2rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
-        <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Acceso predeterminado: <strong>carlos</strong> / clave: <strong>mg2026</strong>
-      </div>
     </div>
   </div>
 
