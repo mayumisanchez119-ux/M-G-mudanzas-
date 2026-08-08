@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cotizador Profesional de Mudanzas y Facturación | MG Transporte y Logística Madrid</title>
+  
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS for Interactive Maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Leaflet JS & jsPDF & AutoTable -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+  <!-- Header principal estilo MG Transporte y Logística con Logo Oficial y Contacto -->
+  <header class="header-bar">
+    <div class="header-container">
+      <a href="#" class="brand-logo">
+        <img src="logo.png?v=original" alt="MG Transporte y Logística" id="company-logo-img" class="company-logo">
+        <div class="brand-text">
+          <h1>MG TRANSPORTE Y LOGÍSTICA</h1>
+          <p>Mudanzas, Transportes, Portes y Logística • Madrid y Envíos Nacionales</p>
+        </div>
+      </a>
+      <div class="header-actions">
+        <a href="tel:692264152" class="btn-contact-quick">
+          <i class="fa-solid fa-phone"></i> 692 264 152
+        </a>
+        <a href="mailto:admon@mygtransporteylogistica.com" class="btn-contact-quick" style="background: rgba(255, 255, 255, 0.22);">
+          <i class="fa-solid fa-envelope"></i> admon@mygtransporteylogistica.com
+        </a>
+
+        <!-- Botón de Iniciar Sesión / Estado de Sesión en la Barra Azul Superior -->
+        <div id="header-auth-container" style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="button" class="btn-contact-quick" id="btn-header-login" onclick="openLoginModal()" style="background: #FFFFFF; color: var(--primary); font-weight: 700; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.18); cursor: pointer;">
+            <i class="fa-solid fa-key" style="color: var(--primary);"></i> Iniciar Sesión Facturación
+          </button>
+          
+          <div id="header-auth-user" style="display: none; align-items: center; gap: 0.5rem;">
+            <span style="background: rgba(255,255,255,0.22); color: white; padding: 0.4rem 0.85rem; border-radius: 50px; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+              <i class="fa-solid fa-user-check" style="color: #6EE7B7;"></i> Carlos Andrés López
+            </span>
+            <button type="button" class="btn-contact-quick" onclick="logoutInvoiceAdmin()" style="background: #EF4444; color: white; border: none; font-weight: 600; cursor: pointer; padding: 0.4rem 0.75rem;">
+              <i class="fa-solid fa-power-off"></i> Salir y Volver al Cotizador
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navegación de Pestañas Públicas (Cotizador, Historial, Aceptadas, Estadísticas) -->
+    <div class="top-nav-bar" id="public-top-nav-bar">
+      <div class="top-nav-container">
+        <button class="top-tab active" id="tab-btn-cotizador" onclick="switchMainTab('cotizador')">
+          <i class="fa-solid fa-calculator"></i> Cotizador de Servicio
+        </button>
+        <button class="top-tab" id="tab-btn-historial" onclick="switchMainTab('historial')">
+          <i class="fa-solid fa-list-check"></i> Historial Presupuestos
+          <span class="top-tab-badge" id="history-count-badge">0</span>
+        </button>
+        <button class="top-tab" id="tab-btn-aceptadas" onclick="switchMainTab('aceptadas')">
+          <i class="fa-solid fa-handshake-angle"></i> Servicios Aceptados
+          <span class="top-tab-badge" id="accepted-count-badge" style="background: var(--success); color: white;">0</span>
+        </button>
+        <button class="top-tab" id="tab-btn-estadisticas" onclick="switchMainTab('estadisticas')">
+          <i class="fa-solid fa-chart-line"></i> Estadísticas y Conversión
+          <span class="top-tab-badge" id="completed-count-badge" style="background: #3B82F6; color: white;">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navegación de las 2 Hojas de Facturación en la Barra Azul Superior -->
+    <div class="top-nav-bar" id="invoice-top-nav-bar" style="display: none; background: rgba(0, 0, 0, 0.28);">
+      <div class="top-nav-container">
+        <button type="button" class="top-tab active" id="tab-btn-invoice-emitir" onclick="switchInvoiceSubTab('emitir')">
+          <i class="fa-solid fa-file-invoice"></i> 1. Emitir Factura Oficial
+        </button>
+        <button type="button" class="top-tab" id="tab-btn-invoice-registro" onclick="switchInvoiceSubTab('registro')">
+          <i class="fa-solid fa-folder-open"></i> 2. Facturas Emitidas y Registro
+          <span class="top-tab-badge" id="invoices-subtab-badge" style="background: #10B981; color: white;">3</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- VISTA 1: COTIZADOR DE SERVICIO (MUDANZA INTEGRAL VS SOLO TRANSPORTE) -->
+  <div id="view-cotizador" class="main-wrapper">
+
+    <!-- Columna Izquierda: Selector de Modo, Inventario/Vehículos, Mapa y Configuración -->
+    <div class="main-content">
+
+      <!-- SELECTOR PRINCIPAL DE MODALIDAD DE SERVICIO -->
+      <section class="card-section service-mode-section" style="border: 2px solid var(--primary-light); background: #FFFFFF;">
+        <div class="service-mode-header">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
+            <i class="fa-solid fa-layer-group"></i> Seleccionar Modalidad de Cotización
+          </span>
+          <span class="tag-service-active" id="active-mode-label">Modo: Mudanza Integral</span>
+        </div>
+
+        <div class="service-mode-buttons">
+          
+          <!-- Opción 1: Mudanza Integral -->
+          <button type="button" class="btn-service-mode active" id="btn-mode-mudanza" onclick="switchServiceMode('mudanza')">
+            <div class="service-mode-icon">
+              <i class="fa-solid fa-house-chimney"></i>
+            </div>
+            <div class="service-mode-text">
+              <strong>Mudanza Integral / Completa</strong>
+              <span>Inventario de muebles por estancias, cubicaje m³, mozos, embalaje y accesos</span>
+            </div>
+          </button>
+
+          <!-- Opción 2: Solo Transporte / Portes -->
+          <button type="button" class="btn-service-mode" id="btn-mode-transporte" onclick="switchServiceMode('transporte')">
+            <div class="service-mode-icon" style="background: #E0E7FF; color: #3730A3;">
+              <i class="fa-solid fa-truck-fast"></i>
+            </div>
+            <div class="service-mode-text">
+              <strong>Solo Transporte / Portes</strong>
+              <span>Flota de camiones 18 m³, bultos, asistencia en carga editable y ruta</span>
+            </div>
+          </button>
+
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- PANEL A: MUDANZA INTEGRAL (INVENTARIO, CUBICAJE Y ACCESOS) -->
+      <!-- ================================================================= -->
+      <div id="panel-mode-mudanza">
+
+        <!-- Sección 1: Inventario por Estancia -->
+        <section class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="fa-solid fa-boxes-packing"></i> Inventario y Mobiliario de la Mudanza
+            </h2>
+            <span class="badge-count" id="badge-selected-items">0 seleccionados</span>
+          </div>
+
+          <!-- Buscador y Filtros -->
+          <div class="search-filter-bar">
+            <div class="search-input-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="input-search" class="input-search" placeholder="Buscar mueble, electrodoméstico, caja...">
+            </div>
+          </div>
+
+          <!-- Tabs de Ubicación / Estancia -->
+          <div class="room-tabs" id="room-tabs-container">
+            <!-- Renderizado dinámico desde app.js -->
+          </div>
+
+          <!-- Rejilla de Ítems con botón de lápiz -->
+          <div class="items-grid" id="items-grid-container">
+            <!-- Renderizado dinámico desde app.js -->
+          </div>
+
+          <!-- Botón Objeto Personalizado -->
+          <button class="btn-add-custom" id="btn-open-custom-modal">
+            <i class="fa-solid fa-plus-circle"></i> ¿No encuentras un objeto? Añadir mueble o caja personalizada
+          </button>
+        </section>
+
+        <!-- Sección 2: Tarifas Unitarias y Condicionantes de Acceso -->
+        <section class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="fa-solid fa-sliders"></i> Tarifas de Mudanza y Condicionantes de Acceso
+            </h2>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1.1rem;">
+            
+            <!-- Precio por m3 -->
+            <div class="form-group">
+              <label class="form-label" for="price-per-m3">
+                <i class="fa-solid fa-cube"></i> Tarifa por m³ (€/m³)
+              </label>
+              <div class="price-input-group">
+                <input type="number" id="price-per-m3" class="form-input" value="25" min="1" step="0.5">
+                <span class="unit-addon">€ / m³</span>
+              </div>
+            </div>
+
+            <!-- Precio por Camión (18 m3) -->
+            <div class="form-group">
+              <label class="form-label" for="price-per-truck">
+                <i class="fa-solid fa-truck"></i> Camión 18 m³ (€/ud)
+              </label>
+              <div class="price-input-group">
+                <input type="number" id="price-per-truck" class="form-input" value="120" min="0" step="5">
+                <span class="unit-addon">€ / ud</span>
+              </div>
+            </div>
+
+            <!-- Precio por Operario / Persona -->
+            <div class="form-group">
+              <label class="form-label" for="price-per-staff">
+                <i class="fa-solid fa-user-gear"></i> Tarifa Operario (€/mozo)
+              </label>
+              <div class="price-input-group">
+                <input type="number" id="price-per-staff" class="form-input" value="80" min="0" step="5">
+                <span class="unit-addon">€ / mozo</span>
+              </div>
+            </div>
+
+            <!-- Recargo por Planta sin Ascensor -->
+            <div class="form-group">
+              <label class="form-label" for="price-per-floor">
+                <i class="fa-solid fa-stairs"></i> Tarifa Planta (€/piso)
+              </label>
+              <div class="price-input-group">
+                <input type="number" id="price-per-floor" class="form-input" value="25" min="0" step="5">
+                <span class="unit-addon">€ / piso</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; margin-top: 0.8rem;">
+            <!-- Planta de Origen -->
+            <div class="form-group">
+              <label class="form-label" for="select-floor">
+                <i class="fa-solid fa-building"></i> Altura / Planta del Inmueble
+              </label>
+              <select id="select-floor" class="form-select">
+                <option value="0">Planta Baja / Chalet (Sin recargo)</option>
+                <option value="1">1ª Planta</option>
+                <option value="2">2ª Planta</option>
+                <option value="3">3ª Planta</option>
+                <option value="4">4ª Planta o superior</option>
+              </select>
+            </div>
+
+            <!-- Disponibilidad de Ascensor -->
+            <div class="form-group">
+              <label class="form-label" for="select-elevator">
+                <i class="fa-solid fa-elevator"></i> Ascensor Disponible
+              </label>
+              <select id="select-elevator" class="form-select">
+                <option value="yes">Sí, apto para mudanza</option>
+                <option value="no">No (Acceso por escalera)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Indicador Dinámico de Recargo por Escalera -->
+          <div id="floor-surcharge-badge-container" style="margin-top: 0.5rem; background: #F8FAFC; border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
+            <span id="floor-surcharge-text"><i class="fa-solid fa-info-circle" style="color: var(--primary);"></i> <strong>Estado de accesos:</strong> Planta Baja o con ascensor (Sin recargo)</span>
+            <strong id="floor-surcharge-amount" style="color: var(--primary); font-size: 0.95rem;">+0.00 €</strong>
+          </div>
+
+          <!-- Servicios Adicionales Editables (Embalaje y Montaje) -->
+          <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+            <span class="form-label"><i class="fa-solid fa-hand-holding-box"></i> Servicios Opcionales de Mudanza (Precios Editables):</span>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+              
+              <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: var(--radius-sm);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600;">
+                  <input type="checkbox" id="check-packing"> Embalaje Profesional de Cajas
+                </label>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.4rem;">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">Precio:</span>
+                  <input type="number" id="price-packing-rate" class="form-input" style="width: 70px; padding: 0.3rem 0.5rem; font-size: 0.85rem;" value="6" min="0" step="0.5">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">€ / m³</span>
+                </div>
+              </div>
+
+              <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: var(--radius-sm);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600;">
+                  <input type="checkbox" id="check-disassembly"> Desmontaje y Montaje de Muebles
+                </label>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.4rem;">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">Precio:</span>
+                  <input type="number" id="price-disassembly-rate" class="form-input" style="width: 80px; padding: 0.3rem 0.5rem; font-size: 0.85rem;" value="40" min="0" step="5">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">€ tarifa fija</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- Sección 3: Estimación y Edición de Flota (18 m3) y Personal -->
+        <section class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="fa-solid fa-truck-ramp-box"></i> Flota de Camiones (18 m³) y Personal Asignado
+            </h2>
+            <button id="btn-reset-logistics" style="background: none; border: none; color: var(--primary); font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+              <i class="fa-solid fa-rotate-left"></i> Restablecer Sugerencias
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem;">
+
+            <!-- Tarjeta Camiones (18 m3) -->
+            <div class="logistics-card">
+              <div class="logistics-header">
+                <span class="logistics-title">
+                  <i class="fa-solid fa-truck"></i> Camiones Requeridos (18 m³)
+                </span>
+                <span class="tag-suggested" id="suggested-trucks-text">1 camión 18m³ (Sugerido)</span>
+              </div>
+              <div class="logistics-control-row">
+                <div class="logistics-info">
+                  <strong id="truck-type-desc">Camión Carrozado 18 m³</strong>
+                  <span>Capacidad estándar 18 m³ por unidad</span>
+                </div>
+                <div class="logistics-stepper">
+                  <button class="btn-qty" id="btn-truck-minus">-</button>
+                  <span style="font-weight: 700; width: 30px; text-align: center;" id="val-trucks-qty">1</span>
+                  <button class="btn-qty" id="btn-truck-plus">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tarjeta Personal -->
+            <div class="logistics-card">
+              <div class="logistics-header">
+                <span class="logistics-title">
+                  <i class="fa-solid fa-users"></i> Personal / Operarios
+                </span>
+                <span class="tag-suggested" id="suggested-staff-text">2 operarios (Sugerido)</span>
+              </div>
+              <div class="logistics-control-row">
+                <div class="logistics-info">
+                  <strong>Mozos de Mudanza</strong>
+                  <span>Carga, descarga, escalera y estiba</span>
+                </div>
+                <div class="logistics-stepper">
+                  <button class="btn-qty" id="btn-staff-minus">-</button>
+                  <span style="font-weight: 700; width: 30px; text-align: center;" id="val-staff-qty">2</span>
+                  <button class="btn-qty" id="btn-staff-plus">+</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- PANEL B: SOLO TRANSPORTE (FLOTA 18m³ STEPPER, PRECIO EDITABLE, BULTO Y ASISTENCIA) -->
+      <!-- ================================================================= -->
+      <div id="panel-mode-transporte" style="display: none;">
+
+        <!-- 1. Flota de Camiones de 18 m³ (Cantidad con Botones + / - y Tarifa Editable) -->
+        <section class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="fa-solid fa-truck-moving"></i> 1. Flota de Camiones (18 m³ con Plataforma)
+            </h2>
+            <span class="badge-count" id="badge-transport-capacity">18 m³ de Capacidad</span>
+          </div>
+
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.8rem;">
+            * Toda nuestra flota se compone de <strong>Camiones de 18 m³ con Plataforma Elevadora</strong>. Sube o baja la cantidad de vehículos y personaliza la tarifa por camión.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem;">
+            
+            <!-- Stepper Cantidad de Camiones de 18 m3 -->
+            <div class="logistics-card" style="margin-bottom: 0;">
+              <div class="logistics-header">
+                <span class="logistics-title">
+                  <i class="fa-solid fa-truck"></i> Cantidad de Camiones (18 m³)
+                </span>
+              </div>
+              <div class="logistics-control-row">
+                <div class="logistics-info">
+                  <strong id="transport-trucks-desc">1 Camión de 18 m³</strong>
+                  <span id="transport-trucks-sub">Capacidad hasta 1.500 kg</span>
+                </div>
+                <div class="logistics-stepper">
+                  <button type="button" class="btn-qty" id="btn-transport-truck-minus">-</button>
+                  <span style="font-weight: 700; width: 32px; text-align: center; font-size: 1.05rem;" id="val-transport-trucks-qty">1</span>
+                  <button type="button" class="btn-qty" id="btn-transport-truck-plus">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tarifa Editable por Camión de 18 m3 -->
+            <div class="form-group" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center;">
+              <label class="form-label" for="price-transport-per-truck">
+                <i class="fa-solid fa-euro-sign"></i> Tarifa por Camión (€/unidad de 18 m³)
+              </label>
+              <div class="price-input-group">
+                <input type="number" id="price-transport-per-truck" class="form-input" value="120" min="0" step="5">
+                <span class="unit-addon">€ / camión</span>
+              </div>
+              <span style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.25rem;">
+                * Tarifa base editable por vehículo con plataforma elevadora
+              </span>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 2. Bultos y Peso Estimado (Opcional) -->
+        <section class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="fa-solid fa-boxes-stacked"></i> 2. Mercancía / Carga (Opcional)
+            </h2>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="transport-cargo-units">
+                <i class="fa-solid fa-box"></i> Cantidad de Bultos / Palets (Opcional)
+              </label>
+              <input type="number" id="transport-cargo-units" class="form-input" placeholder="Ej: 4" min="0">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="transport-cargo-weight">
+                <i class="fa-solid fa-weight-hanging"></i> Peso Total Estimado en kg (Opcional)
+              </label>
+              <div class="price-input-group">
+                <input type="number" id="transport-cargo-weight" class="form-input" placeholder="Ej: 450" min="0" step="10">
+                <span class="unit-addon">kg</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Asistencia en Carga y Descarga (Precios Editables) -->
+        <section class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="fa-solid fa-people-carry-box"></i> 3. Servicio de Asistencia en Carga y Descarga (Precios Editables)
+            </h2>
+          </div>
+
+          <div class="cargo-options-grid">
+            
+            <!-- Opción 1: Solo Conductor -->
+            <div class="cargo-option-card active" id="card-help-none" onclick="selectTransportHelp('none')">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 700; font-size: 0.88rem;">
+                <input type="radio" name="transport-help-radio" value="none" checked> Solo Conductor / A Pie de Vehículo
+              </label>
+              <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.2rem;">
+                El cliente se encarga de la carga y descarga en origen y destino.
+              </span>
+              <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem;" onclick="event.stopPropagation();">
+                <span style="font-size: 0.8rem; font-weight: 600;">Costo:</span>
+                <input type="number" id="price-help-none" class="form-input" style="width: 75px; padding: 0.25rem 0.5rem; font-size: 0.85rem;" value="0" min="0" step="5">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">€</span>
+              </div>
+            </div>
+
+            <!-- Opción 2: Conductor Ayuda -->
+            <div class="cargo-option-card" id="card-help-driver" onclick="selectTransportHelp('driver_help')">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 700; font-size: 0.88rem;">
+                <input type="radio" name="transport-help-radio" value="driver_help"> Conductor Ayuda en Carga y Descarga
+              </label>
+              <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.2rem;">
+                El chofer colabora activamente en la estiba y movimiento de bultos.
+              </span>
+              <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem;" onclick="event.stopPropagation();">
+                <span style="font-size: 0.8rem; font-weight: 600;">Precio:</span>
+                <input type="number" id="price-help-driver" class="form-input" style="width: 75px; padding: 0.25rem 0.5rem; font-size: 0.85rem;" value="35" min="0" step="5">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">€</span>
+              </div>
+            </div>
+
+            <!-- Opción 3: Conductor + 1 Mozo -->
+            <div class="cargo-option-card" id="card-help-staff" onclick="selectTransportHelp('driver_plus_staff')">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 700; font-size: 0.88rem;">
+                <input type="radio" name="transport-help-radio" value="driver_plus_staff"> Conductor + 1 Mozo Auxiliar de Apoyo
+              </label>
+              <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.2rem;">
+                Equipo de 2 personas para manipulación completa de mercancía.
+              </span>
+              <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem;" onclick="event.stopPropagation();">
+                <span style="font-size: 0.8rem; font-weight: 600;">Precio:</span>
+                <input type="number" id="price-help-staff" class="form-input" style="width: 75px; padding: 0.25rem 0.5rem; font-size: 0.85rem;" value="75" min="0" step="5">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">€</span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- SECCIONES COMUNES (MAPA, RUTAS, CODIGOS POSTALES Y DATOS CLIENTE) -->
+      <!-- ================================================================= -->
+
+      <!-- Sección Compartida: Mapa y Trayecto con Códigos Postales -->
+      <section class="card-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fa-solid fa-map-location-dot"></i> Trayecto, Códigos Postales y Mapa de Ruta
+          </h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem;">
+          
+          <!-- Origen: Dirección o Código Postal -->
+          <div class="form-group">
+            <label class="form-label" for="client-origin">
+              <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> Origen (Dirección o Código Postal)
+            </label>
+            <div class="autocomplete-wrapper">
+              <input type="text" id="client-origin" class="form-input" placeholder="Ej: 28341 o Valdemoro..." autocomplete="off">
+              <div id="origin-suggestions" class="autocomplete-dropdown"></div>
+            </div>
+          </div>
+
+          <!-- Destino: Dirección o Código Postal -->
+          <div class="form-group">
+            <label class="form-label" for="client-destination">
+              <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> Destino (Dirección o Código Postal)
+            </label>
+            <div class="autocomplete-wrapper">
+              <input type="text" id="client-destination" class="form-input" placeholder="Ej: 28939 o Arroyomolinos..." autocomplete="off">
+              <div id="dest-suggestions" class="autocomplete-dropdown"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 0.2rem;">
+          <button class="btn-contact-quick" id="btn-calc-route" style="background: var(--primary); border: none; font-size: 0.88rem; padding: 0.65rem 1.2rem; cursor: pointer;">
+            <i class="fa-solid fa-route"></i> Actualizar Mapa y Calcular Ruta
+          </button>
+          <span id="route-status-msg" style="font-size: 0.85rem; font-weight: 500;"></span>
+        </div>
+
+        <!-- Contenedor Mapa Leaflet -->
+        <div id="map-container" style="margin-top: 1rem;">
+          <div id="map" style="height: 270px; width: 100%; border-radius: var(--radius-md); border: 1.5px solid var(--border);"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="input-distance-km">
+              <i class="fa-solid fa-road"></i> Distancia Calculada (km)
+            </label>
+            <div class="price-input-group">
+              <input type="number" id="input-distance-km" class="form-input" value="15" min="0" step="0.5">
+              <span class="unit-addon">km</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-price-per-km">
+              <i class="fa-solid fa-euro-sign"></i> Tarifa por km (€/km)
+            </label>
+            <div class="price-input-group">
+              <input type="number" id="input-price-per-km" class="form-input" value="1.50" min="0" step="0.10">
+              <span class="unit-addon">€ / km</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sección Compartida: Datos del Cliente -->
+      <section class="card-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fa-solid fa-user-pen"></i> Personalización del Presupuesto (Datos del Cliente)
+          </h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="client-name">Nombre y Apellidos / Empresa</label>
+            <input type="text" id="client-name" class="form-input" placeholder="Ej: Juan Pérez Gómez / Logística SL">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="client-phone">Teléfono de Contacto</label>
+            <input type="tel" id="client-phone" class="form-input" placeholder="Ej: +34 612 345 678">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="client-email">Correo Electrónico</label>
+            <input type="email" id="client-email" class="form-input" placeholder="Ej: cliente@email.com">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="client-date">Fecha Prevista del Servicio</label>
+            <input type="date" id="client-date" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 0.5rem;">
+          <label class="form-label" for="client-notes">Observaciones / Instrucciones de Entrega</label>
+          <input type="text" id="client-notes" class="form-input" placeholder="Instrucciones sobre muelles de carga, horarios, frágiles...">
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Columna Derecha: Tarjeta de Resumen y Exportación Dinámica -->
+    <aside class="sidebar-content">
+      <div class="sticky-sidebar">
+        
+        <div class="summary-card">
+          <h3>
+            <span><i class="fa-solid fa-receipt"></i> Desglose Cotización</span>
+            <span style="font-size: 0.75rem; font-weight: 400; background: rgba(255,255,255,0.15); padding: 0.2rem 0.6rem; border-radius: 4px;" id="sidebar-badge-mode">MUDANZA</span>
+          </h3>
+
+          <div class="summary-row" id="sidebar-row-volume">
+            <span>Volumen / Capacidad:</span>
+            <strong id="display-total-m3" style="color: white; font-size: 1rem;">0.00 m³</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Distancia Recorrido:</span>
+            <strong id="display-dist-km" style="color: white;">15.0 km</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Costo Transporte Distancia:</span>
+            <span id="display-cost-dist">22.50 €</span>
+          </div>
+
+          <div class="summary-row" id="sidebar-row-logistics">
+            <span id="label-cost-logistics">Costo Vehículos & Mozos:</span>
+            <span id="display-cost-logistics">280.00 €</span>
+          </div>
+
+          <div class="summary-row" id="sidebar-row-extras">
+            <span>Recargo Pisos / Extras:</span>
+            <span id="display-cost-extras">0.00 €</span>
+          </div>
+
+          <div class="summary-row" style="border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.5rem; margin-top: 0.5rem;">
+            <span>Total Sugerido Calculado:</span>
+            <strong id="display-suggested-total" style="color: #CBD5E1; font-size: 1.1rem;">0.00 €</strong>
+          </div>
+
+          <!-- Ajuste de Precio Final Personalizado -->
+          <div style="background: rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 0.8rem; margin-top: 0.8rem; border: 1px solid rgba(255,255,255,0.15);">
+            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; color: #E2E8F0; cursor: pointer; margin-bottom: 0.4rem;">
+              <span><i class="fa-solid fa-pen-to-square" style="color: var(--accent);"></i> Ajustar Precio Final</span>
+              <input type="checkbox" id="check-custom-total">
+            </label>
+            <div id="custom-total-group" style="display: none; margin-top: 0.4rem;">
+              <input type="number" id="input-custom-total" class="form-input" placeholder="Precio acordado (€)" style="background: white; color: var(--dark); font-weight: 700;">
+            </div>
+          </div>
+
+          <div class="summary-row total">
+            <div class="summary-row total" style="width: 100%;">
+              <span>PRECIO FINAL ACORDADO:</span>
+              <span class="price-highlight" id="display-grand-total">0.00 €</span>
+            </div>
+          </div>
+
+          <!-- Acciones de Guardar, Exportar y Restablecer Valores -->
+          <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 1.25rem;">
+            <button type="button" class="btn-export-pdf" id="btn-save-quote" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%);">
+              <i class="fa-solid fa-bookmark"></i> Guardar en Historial
+            </button>
+            <button type="button" class="btn-export-pdf" id="btn-export-pdf">
+              <i class="fa-solid fa-file-pdf"></i> Exportar Cotización PDF
+            </button>
+            <button type="button" class="btn-action-sm" onclick="resetQuoterValues()" style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.3); width: 100%; padding: 0.6rem; font-weight: 700; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 0.45rem; cursor: pointer; transition: var(--transition);">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Restablecer Valores / Limpiar
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Banner de Garantía MG con Contacto Directo -->
+        <div style="background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem; font-size: 0.85rem; color: var(--text-muted);">
+          <div style="display: flex; align-items: center; gap: 0.75rem; color: var(--primary); font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-shield-halved" style="font-size: 1.3rem;"></i> Garantía MG Transporte
+          </div>
+          <p>Presupuesto sin compromiso. Garantía de protección de bienes, seguro de mercancías y conductores profesionales.</p>
+          <div style="margin-top: 0.6rem; font-weight: 600; color: var(--dark); font-size: 0.8rem;">
+            <i class="fa-solid fa-phone" style="color: var(--primary);"></i> 692 264 152<br>
+            <i class="fa-solid fa-envelope" style="color: var(--primary);"></i> admon@mygtransporteylogistica.com
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- VISTA 2: HISTORIAL DE PRESUPUESTOS CON BUSCADOR, FILTRO Y EXPORTADOR EXCEL -->
+  <div id="view-historial" class="main-wrapper" style="display: none; grid-template-columns: 1fr;">
+    <section class="card-section" style="width: 100%;">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fa-solid fa-list-check"></i> Historial y Gestión de Presupuestos Cotizados
+        </h2>
+        <span class="badge-count" id="history-total-count">0 presupuestos registrados</span>
+      </div>
+
+      <!-- Buscador, Filtro por Estado y Botón de Exportar a Excel -->
+      <div class="search-filter-bar" style="margin-bottom: 1.2rem; display: flex; gap: 0.85rem; flex-wrap: wrap; align-items: center;">
+        <div class="search-input-wrapper" style="flex: 2; min-width: 240px;">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="history-search-input" class="input-search" placeholder="Buscar por Nº de Presupuesto (ej: PRE-102938), Cliente o Modalidad...">
+        </div>
+        <div style="flex: 1; min-width: 180px;">
+          <select id="history-status-filter" class="form-select" style="height: 100%; font-weight: 600;">
+            <option value="all">🔍 Todos los Estados</option>
+            <option value="Pendiente">⏳ Pendientes</option>
+            <option value="Aceptado">✅ Aceptados</option>
+            <option value="Completado">🎉 Completados / Realizados</option>
+            <option value="En Proceso">🚚 En Proceso</option>
+            <option value="Rechazado">❌ Rechazados</option>
+          </select>
+        </div>
+        <button type="button" class="btn-export-pdf" onclick="exportFilteredQuotesToExcel()" style="background: linear-gradient(135deg, #107C41 0%, #0B5A2F 100%); padding: 0.65rem 1.1rem; width: auto; white-space: nowrap; box-shadow: 0 4px 12px rgba(16, 124, 65, 0.35); font-size: 0.88rem; cursor: pointer;" title="Descargar datos en formato Excel / CSV según los filtros seleccionados">
+          <i class="fa-solid fa-file-excel"></i> Exportar a Excel (.csv)
+        </button>
+      </div>
+
+      <!-- Tabla de Historial -->
+      <div style="overflow-x: auto;">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Código / Modalidad</th>
+              <th>Cliente & Contacto</th>
+              <th>Origen / Destino</th>
+              <th>Detalles Logística</th>
+              <th>Total Sugerido</th>
+              <th>Precio Final</th>
+              <th>Estado</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <!-- Renderizado dinámico desde app.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- VISTA 3: SERVICIOS ACEPTADOS Y CONFIRMADOS -->
+  <div id="view-aceptadas" class="main-wrapper" style="display: none; grid-template-columns: 1fr;">
+    <section class="card-section" style="width: 100%;">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fa-solid fa-handshake-angle" style="color: var(--success);"></i> Panel Operativo de Trabajos Aceptados
+        </h2>
+        <span class="badge-count" id="accepted-total-count" style="background: #D1FAE5; color: #065F46;">0 confirmados</span>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Trabajos confirmados por los clientes (Mudanzas o Portes de Transporte). Cuando finalices el servicio en la dirección de entrega, haz clic en <strong>"Marcar como Realizado"</strong> para sumar las estadísticas.
+      </p>
+
+      <div class="accepted-cards-grid" id="accepted-grid-container">
+        <!-- Renderizado dinámico desde JS -->
+      </div>
+    </section>
+  </div>
+
+  <!-- VISTA 4: ESTADÍSTICAS Y TASA DE CONVERSIÓN -->
+  <div id="view-estadisticas" class="main-wrapper" style="display: none; grid-template-columns: 1fr;">
+    <section class="card-section" style="width: 100%;">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fa-solid fa-chart-pie" style="color: #3B82F6;"></i> Dashboard de Estadísticas y Rendimiento Comercial
+        </h2>
+        <span class="badge-count" id="stats-total-badge" style="background: #DBEAFE; color: #1E40AF;">0 servicios en registro</span>
+      </div>
+
+      <!-- Tarjetas de Métricas KPI -->
+      <div class="stats-kpi-grid">
+        
+        <!-- KPI Tasa de Conversión -->
+        <div class="kpi-card" style="border-left: 4px solid var(--accent); background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%);">
+          <div class="kpi-icon" style="background: #DBEAFE; color: #005DAA;">
+            <i class="fa-solid fa-bullseye"></i>
+          </div>
+          <div class="kpi-info" style="width: 100%;">
+            <span class="kpi-label">TASA DE CIERRE / CONVERSIÓN</span>
+            <strong class="kpi-value" id="kpi-conversion-rate" style="color: #005DAA;">0.0%</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;" id="kpi-conversion-ratio">
+              0 aceptados de 0 presupuestos
+            </div>
+            <div style="background: #E2E8F0; border-radius: 50px; height: 6px; width: 100%; margin-top: 0.4rem; overflow: hidden;">
+              <div id="kpi-conversion-bar" style="background: linear-gradient(90deg, #005DAA, #10B981); height: 100%; width: 0%; transition: width 0.4s ease;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #D1FAE5; color: #059669;">
+            <i class="fa-solid fa-euro-sign"></i>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">FACTURACIÓN REALIZADA</span>
+            <strong class="kpi-value" id="kpi-total-revenue">0.00 €</strong>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #DBEAFE; color: #1D4ED8;">
+            <i class="fa-solid fa-truck-fast"></i>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">SERVICIOS REGISTRADOS</span>
+            <strong class="kpi-value" id="kpi-total-moves">0</strong>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #FEF3C7; color: #D97706;">
+            <i class="fa-solid fa-boxes-stacked"></i>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">VOLUMEN TRASLADADO</span>
+            <strong class="kpi-value" id="kpi-total-m3">0.00 m³</strong>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #FFE4E6; color: #E11D48;">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">TICKET PROMEDIO</span>
+            <strong class="kpi-value" id="kpi-avg-ticket">0.00 €</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Servicios Aceptados y Realizados -->
+      <h3 style="font-size: 1.1rem; color: var(--dark); margin: 2rem 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-clock-rotate-left"></i> Registro Histórico de Servicios Aceptados y Realizados
+      </h3>
+
+      <div style="overflow-x: auto;">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Código / Modalidad</th>
+              <th>Cliente & Teléfono</th>
+              <th>Fecha Servicio</th>
+              <th>Trayecto Realizado</th>
+              <th>Volumen / Flota</th>
+              <th>Km</th>
+              <th>Importe Cobrado (€)</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="completed-tbody">
+            <!-- Renderizado dinámico desde app.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- VISTA 5: MÓDULO DE FACTURACIÓN OFICIAL (PROTEGIDO POR CREDENCIALES) -->
+  <!-- ================================================================= -->
+  <div id="view-facturacion" style="display: none; width: 100%; max-width: 1550px; margin: 1.25rem auto; padding: 0 1.25rem;">
+
+    <!-- 1. PANTALLA DE ACCESO / LOGIN DE FACTURACIÓN -->
+    <div id="invoice-login-wrapper" style="display: flex; justify-content: center; align-items: center; min-height: 520px; width: 100%; padding: 2rem 1rem;">
+      <div class="card-section" style="max-width: 460px; width: 100%; padding: 2.5rem; text-align: center; border-top: 5px solid var(--primary); box-shadow: var(--shadow-lg); background: white; border-radius: var(--radius-lg);">
+        <div style="width: 70px; height: 70px; background: #EBF4FC; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.2rem auto; box-shadow: 0 4px 12px rgba(0, 93, 170, 0.15);">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h2 style="font-size: 1.35rem; color: var(--dark); font-weight: 700; margin-bottom: 0.4rem;">Acceso al Módulo de Facturación</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.6rem; line-height: 1.4;">
+          Área administrativa protegida para la emisión de facturas oficiales, liquidación de IVA/IRPF y cobros de <strong>Carlos Andrés López</strong>.
+        </p>
+
+        <form id="form-invoice-login" style="text-align: left;">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label" for="input-login-user" style="font-weight: 600;"><i class="fa-solid fa-user"></i> Usuario Administrativo</label>
+            <input type="text" id="input-login-user" class="form-input" placeholder="Ej: carlos o admin" value="carlos" required style="padding: 0.75rem 0.9rem; font-size: 0.95rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.2rem;">
+            <label class="form-label" for="input-login-pass" style="font-weight: 600;"><i class="fa-solid fa-key"></i> Contraseña de Acceso</label>
+            <input type="password" id="input-login-pass" class="form-input" placeholder="Ingrese contraseña..." value="mg2026" required style="padding: 0.75rem 0.9rem; font-size: 0.95rem;">
+          </div>
+
+          <div id="login-error-msg" style="color: var(--danger); font-size: 0.84rem; font-weight: 600; display: none; margin-bottom: 1rem; background: #FEE2E2; padding: 0.5rem; border-radius: 6px;">
+            <i class="fa-solid fa-circle-exclamation"></i> Usuario o contraseña incorrectos.
+          </div>
+
+          <button type="submit" class="btn-export-pdf" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.85rem; font-size: 0.95rem; cursor: pointer;">
+            <i class="fa-solid fa-unlock-keyhole"></i> Iniciar Sesión en Facturación
+          </button>
+        </form>
+
+        <div style="background: #F8FAFC; border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 1.5rem; font-size: 0.78rem; color: var(--text-muted);">
+          <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Credenciales predeterminadas: <strong>carlos</strong> / clave: <strong>mg2026</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. PANEL ADMINISTRATIVO DE FACTURACIÓN (SE MUESTRA TRAS AUTENTICARSE) -->
+    <div id="invoice-dashboard-wrapper" style="display: none; width: 100%;">
+      
+      <!-- Barra Superior de Sesión Administrativa de Facturación -->
+      <div style="background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.9rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 40px; height: 40px; background: #D1FAE5; color: #065F46; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div>
+            <strong style="font-size: 0.98rem; color: var(--dark); display: block;">MÓDULO DE FACTURACIÓN: CARLOS ANDRES LOPEZ</strong>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">NIF: Y7321814P • TLF: 692 264 152 • admon@mygtransporteylogistica.com</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <button type="button" class="btn-action-sm" onclick="resetInvoiceForm()" style="background: #F8FAFC; border: 1px solid var(--border); font-weight: 600; padding: 0.45rem 0.85rem;">
+            <i class="fa-solid fa-file-circle-plus"></i> Nueva Factura
+          </button>
+          <button type="button" class="btn-action-sm" onclick="logoutInvoiceAdmin()" style="background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; font-weight: 700; padding: 0.45rem 0.85rem;">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Salir y Volver al Cotizador
+          </button>
+        </div>
+      </div>
+
+      <!-- HOJA A: EMITIR FACTURA OFICIAL -->
+      <div id="subview-invoice-emitir">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+          
+          <!-- Columna Izquierda: Datos de Emisor, Cliente y Tabla Dinámica de Servicios Prestados -->
+          <div>
+
+            <!-- Datos del Emisor y Cliente Receptor -->
+            <section class="card-section">
+              <div class="section-header">
+                <h2 class="section-title">
+                  <i class="fa-solid fa-file-signature" style="color: var(--primary);"></i> Datos de Emisión y Cliente Receptor
+                </h2>
+                <span class="badge-count" style="background: #EBF4FC; color: var(--primary);">Emisor Oficial MG</span>
+              </div>
+
+              <!-- Datos Emisor Predefinidos -->
+              <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem; margin-bottom: 1rem; font-size: 0.85rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.6rem;">
+                <div><strong style="color: var(--primary);">Responsable Fiscal:</strong> CARLOS ANDRES LOPEZ</div>
+                <div><strong style="color: var(--primary);">NIF / NIE:</strong> Y7321814P</div>
+                <div><strong style="color: var(--primary);">Teléfono:</strong> 692 264 152</div>
+                <div><strong style="color: var(--primary);">Email:</strong> admon@mygtransporteylogistica.com</div>
+              </div>
+
+              <!-- Datos Cliente y Factura -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div class="form-group">
+                  <label class="form-label" for="invoice-number">Nº de Factura Oficial</label>
+                  <input type="text" id="invoice-number" class="form-input" value="FAC-2026-001" style="font-weight: 700; color: var(--primary);">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="invoice-date">Fecha de Emisión</label>
+                  <input type="date" id="invoice-date" class="form-input">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="invoice-due-date">Fecha de Vencimiento</label>
+                  <input type="date" id="invoice-due-date" class="form-input">
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 0.2rem;">
+                <div class="form-group">
+                  <label class="form-label" for="invoice-client-name">Cliente / Razón Social</label>
+                  <input type="text" id="invoice-client-name" class="form-input" placeholder="Nombre de empresa o particular...">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="invoice-client-nif">NIF / CIF / NIE del Cliente</label>
+                  <input type="text" id="invoice-client-nif" class="form-input" placeholder="Ej: B-12345678 o 12345678Z">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="invoice-client-address">Dirección Fiscal / Localidad</label>
+                  <input type="text" id="invoice-client-address" class="form-input" placeholder="Dirección completa del cliente...">
+                </div>
+              </div>
+            </section>
+
+            <!-- Tabla Dinámica de Servicios Prestados -->
+            <section class="card-section">
+              <div class="section-header">
+                <h2 class="section-title">
+                  <i class="fa-solid fa-list-ol" style="color: var(--primary);"></i> Servicios Prestados (Líneas de Facturación)
+                </h2>
+              </div>
+
+              <!-- Botonera Rápida para Agregar Conceptos -->
+              <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                <button type="button" class="btn-action-sm" onclick="addInvoiceItemRow('', 1, 280)" style="background: var(--primary); color: white; font-weight: 600;">
+                  <i class="fa-solid fa-plus"></i> Añadir Concepto Libre / Ruta
+                </button>
+                <button type="button" class="btn-action-sm" onclick="addPresetServiceRow('mudanza')" style="background: #EBF4FC; color: var(--primary); font-weight: 600;">
+                  <i class="fa-solid fa-house-chimney"></i> + Servicio Mudanza
+                </button>
+                <button type="button" class="btn-action-sm" onclick="addPresetServiceRow('transporte')" style="background: #E0E7FF; color: #3730A3; font-weight: 600;">
+                  <i class="fa-solid fa-truck-fast"></i> + Servicio Transporte
+                </button>
+                <button type="button" class="btn-action-sm" onclick="loadFromAcceptedQuoteModal()" style="background: #D1FAE5; color: #065F46; font-weight: 600;">
+                  <i class="fa-solid fa-file-import"></i> Importar de Trabajo Aceptado
+                </button>
+              </div>
+
+              <!-- Tabla de Servicios Prestados -->
+              <div style="overflow-x: auto;">
+                <table class="invoice-items-table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="background: var(--dark); color: white; font-size: 0.85rem;">
+                      <th style="padding: 0.75rem; text-align: left; width: 50%;">SERVICIOS PRESTADOS</th>
+                      <th style="padding: 0.75rem; text-align: center; width: 15%;">CANTIDAD</th>
+                      <th style="padding: 0.75rem; text-align: right; width: 18%;">PRECIO (€)</th>
+                      <th style="padding: 0.75rem; text-align: right; width: 17%;">TOTAL (€)</th>
+                      <th style="padding: 0.75rem; text-align: center; width: 8%;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="invoice-items-tbody">
+                    <!-- Renderizado dinámico desde app.js -->
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+          </div>
+
+          <!-- Columna Derecha: Impuestos (IVA/IRPF), Forma de Pago y Emisión PDF -->
+          <div>
+
+            <!-- Card de Impuestos y Total -->
+            <div class="summary-card" style="margin-bottom: 1.25rem;">
+              <h3>
+                <span><i class="fa-solid fa-calculator"></i> Liquidación e Impuestos</span>
+                <span style="font-size: 0.75rem; font-weight: 400; background: rgba(255,255,255,0.15); padding: 0.2rem 0.6rem; border-radius: 4px;">OFICIAL</span>
+              </h3>
+
+              <!-- Base Imponible -->
+              <div class="summary-row" style="font-size: 0.95rem;">
+                <span>Base Imponible:</span>
+                <strong id="invoice-base-amount" style="color: white; font-size: 1.1rem;">0.00 €</strong>
+              </div>
+
+              <!-- Casilla Configurable de IVA (Poner / Quitar) -->
+              <div style="background: rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 0.75rem; margin: 0.6rem 0; border: 1px solid rgba(255,255,255,0.15);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: white;">
+                    <input type="checkbox" id="check-invoice-iva" checked> Aplicar IVA
+                  </label>
+                  <div style="display: flex; align-items: center; gap: 0.3rem;">
+                    <input type="number" id="input-invoice-iva-pct" style="width: 52px; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; text-align: center; background: white; color: var(--dark);" value="21" min="0" max="100">
+                    <span style="color: #CBD5E1; font-size: 0.85rem;">%</span>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #94A3B8; margin-top: 0.3rem;">
+                  <span>Importe IVA:</span>
+                  <span id="invoice-iva-amount" style="color: #6EE7B7; font-weight: 700;">+0.00 €</span>
+                </div>
+              </div>
+
+              <!-- Casilla Configurable de IRPF (Poner / Quitar) -->
+              <div style="background: rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 0.75rem; margin: 0.6rem 0; border: 1px solid rgba(255, 255, 255, 0.15);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: white;">
+                    <input type="checkbox" id="check-invoice-irpf"> Retención IRPF (-1%)
+                  </label>
+                  <div style="display: flex; align-items: center; gap: 0.3rem;">
+                    <input type="number" id="input-invoice-irpf-pct" style="width: 52px; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; text-align: center; background: white; color: var(--dark);" value="1" min="0" max="100">
+                    <span style="color: #CBD5E1; font-size: 0.85rem;">%</span>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #94A3B8; margin-top: 0.3rem;">
+                  <span>Retención IRPF:</span>
+                  <span id="invoice-irpf-amount" style="color: #FCA5A5; font-weight: 700;">-0.00 €</span>
+                </div>
+              </div>
+
+              <!-- TOTAL FACTURA -->
+              <div class="summary-row total" style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed rgba(255,255,255,0.2);">
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.9rem; font-weight: 600;">TOTAL FACTURA:</span>
+                  <span class="price-highlight" id="invoice-grand-total" style="font-size: 1.45rem;">0.00 €</span>
+                </div>
+              </div>
+
+              <!-- Acciones de Factura -->
+              <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem;">
+                <button type="button" class="btn-export-pdf" id="btn-save-invoice" onclick="saveInvoiceRecord()" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%);">
+                  <i class="fa-solid fa-floppy-disk"></i> Guardar Factura en Registro
+                </button>
+                <button type="button" class="btn-export-pdf" id="btn-export-invoice-pdf" onclick="exportInvoiceToPDF()">
+                  <i class="fa-solid fa-file-pdf"></i> Generar Factura Oficial PDF
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Card de Datos Bancarios y Forma de Pago -->
+            <div class="card-section" style="padding: 1.1rem; border-left: 4px solid var(--primary);">
+              <h4 style="font-size: 0.92rem; color: var(--dark); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-building-columns" style="color: var(--primary);"></i> FORMA DE PAGO EN FACTURA
+              </h4>
+              <div style="font-size: 0.84rem; color: var(--text-main); line-height: 1.5;">
+                <p><strong>Método:</strong> Transferencia bancaria</p>
+                <p><strong>Entidad:</strong> Eurocaja Rural</p>
+                <p style="background: #F1F5F9; padding: 0.4rem 0.6rem; border-radius: 4px; font-family: monospace; font-weight: 700; color: var(--primary); margin-top: 0.3rem;">
+                  IBAN: ES43 3081 0140 7050 0059 3801
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- HOJA B: FACTURAS EMITIDAS Y MÉTRICAS (TARJETAS KPI DE CANTIDAD E IMPORTES) -->
+      <div id="subview-invoice-registro" style="display: none;">
+        
+        <!-- Tarjetas KPI de Resumen de Facturas Emitidas e Importes -->
+        <div class="stats-kpi-grid" style="margin-bottom: 1.5rem;">
+          <div class="kpi-card" style="border-left: 4px solid var(--primary);">
+            <div class="kpi-icon" style="background: var(--primary-light); color: var(--primary);">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">TOTAL FACTURAS EMITIDAS</span>
+              <strong class="kpi-value" id="kpi-inv-total-count">0</strong>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="border-left: 4px solid #059669;">
+            <div class="kpi-icon" style="background: #D1FAE5; color: #059669;">
+              <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">IMPORTE TOTAL FACTURADO</span>
+              <strong class="kpi-value" id="kpi-inv-total-amount" style="color: #059669;">0.00 €</strong>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="border-left: 4px solid #2563EB;">
+            <div class="kpi-icon" style="background: #DBEAFE; color: #2563EB;">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">FACTURAS COBRADAS</span>
+              <strong class="kpi-value" id="kpi-inv-paid-amount" style="color: #2563EB;">0.00 €</strong>
+              <span style="font-size: 0.75rem; color: var(--text-muted);" id="kpi-inv-paid-count">0 facturas</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="border-left: 4px solid #D97706;">
+            <div class="kpi-icon" style="background: #FEF3C7; color: #D97706;">
+              <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">PENDIENTES DE COBRO</span>
+              <strong class="kpi-value" id="kpi-inv-pending-amount" style="color: #D97706;">0.00 €</strong>
+              <span style="font-size: 0.75rem; color: var(--text-muted);" id="kpi-inv-pending-count">0 facturas</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla Historial de Facturas Emitidas -->
+        <section class="card-section" style="width: 100%;">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="fa-solid fa-folder-closed" style="color: var(--primary);"></i> Registro Completo de Facturas Emitidas
+            </h2>
+            <span class="badge-count" id="invoices-saved-count">0 facturas</span>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Nº Factura</th>
+                  <th>Fecha Emisión</th>
+                  <th>Cliente / Razón Social</th>
+                  <th>NIF / CIF</th>
+                  <th>Base Imponible</th>
+                  <th>Impuestos (IVA/IRPF)</th>
+                  <th>Total Factura (€)</th>
+                  <th>Estado</th>
+                  <th style="text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="invoices-history-tbody">
+                <!-- Renderizado dinámico desde app.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Modal para Editar m3 de un Objeto (Lápiz) -->
+  <div class="modal-overlay" id="modal-edit-m3">
+    <div class="modal-box" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen" style="color: var(--primary);"></i> Modificar Volumen (m³)</h3>
+        <button class="btn-close-modal" id="btn-close-edit-m3"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-edit-m3">
+        <p id="edit-m3-item-name" style="font-weight: 600; font-size: 0.95rem; color: var(--dark); margin-bottom: 1rem;"></p>
+        
+        <div class="form-group">
+          <label class="form-label" for="input-edit-m3-val">Nuevo Volumen en m³ por unidad:</label>
+          <div class="price-input-group">
+            <input type="number" id="input-edit-m3-val" class="form-input" step="0.05" min="0.01" required>
+            <span class="unit-addon">m³ / ud</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-export-pdf" style="margin-top: 1.2rem; background: var(--primary);">
+          <i class="fa-solid fa-check"></i> Actualizar Volumen
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para Añadir Objeto Personalizado -->
+  <div class="modal-overlay" id="modal-custom-item">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Agregar Objeto Personalizado</h3>
+        <button class="btn-close-modal" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-custom-item">
+        <div class="form-group">
+          <label class="form-label" for="custom-item-name">Nombre del Mueble u Objeto</label>
+          <input type="text" id="custom-item-name" class="form-input" placeholder="Ej: Piano de Cola, Cuadro XXL..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="select-custom-room">Ubicación / Estancia</label>
+          <select id="select-custom-room" class="form-select" required>
+            <!-- Opciones renderizadas dinámicamente -->
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="custom-item-m3">Volumen Estimado (m³)</label>
+            <input type="number" id="custom-item-m3" class="form-input" placeholder="Ej: 1.8" step="0.05" min="0.01" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="custom-item-qty">Cantidad Inicial</label>
+            <input type="number" id="custom-item-qty" class="form-input" value="1" min="1" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-export-pdf" style="margin-top: 1rem; background: var(--primary);">
+          <i class="fa-solid fa-check"></i> Guardar en Inventario
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Inicio de Sesión de Facturación -->
+  <div class="modal-overlay" id="modal-invoice-login">
+    <div class="modal-box" style="max-width: 440px; padding: 2rem; border-top: 5px solid var(--primary);">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <div style="width: 38px; height: 38px; background: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0;">Iniciar Sesión Facturación</h3>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeLoginModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.2rem;">
+        Ingrese sus credenciales de administración para acceder al panel de facturación y emisión oficial.
+      </p>
+
+      <form id="form-invoice-modal-login" onsubmit="event.preventDefault(); document.getElementById('form-invoice-login').dispatchEvent(new Event('submit'));">
+        <div class="form-group" style="margin-bottom: 0.9rem;">
+          <label class="form-label" for="modal-input-user"><i class="fa-solid fa-user"></i> Usuario Administrativo</label>
+          <input type="text" id="modal-input-user" class="form-input" placeholder="carlos" value="carlos" required oninput="document.getElementById('input-login-user').value = this.value">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label" for="modal-input-pass"><i class="fa-solid fa-key"></i> Contraseña de Acceso</label>
+          <input type="password" id="modal-input-pass" class="form-input" placeholder="mg2026" value="mg2026" required oninput="document.getElementById('input-login-pass').value = this.value">
+        </div>
+
+        <button type="submit" class="btn-export-pdf" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
+          <i class="fa-solid fa-unlock"></i> Desbloquear Módulo
+        </button>
+      </form>
+
+      <div style="background: #F8FAFC; border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 0.65rem; margin-top: 1.2rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+        <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Acceso predeterminado: <strong>carlos</strong> / clave: <strong>mg2026</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="inventory-data.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
