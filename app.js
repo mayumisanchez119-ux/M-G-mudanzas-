@@ -254,7 +254,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (headerAuthUser) headerAuthUser.style.display = 'none';
 
   switchMainTab('cotizador');
+  hidePreloader();
 });
+
+// Desvanecer Preloader / Splash Screen de carga inicial con el logo de la empresa
+function hidePreloader() {
+  const preloader = document.getElementById('app-preloader');
+  if (preloader) {
+    setTimeout(() => {
+      preloader.classList.add('fade-out');
+      setTimeout(() => {
+        preloader.style.display = 'none';
+      }, 600);
+    }, 700);
+  }
+}
+
+window.addEventListener('load', hidePreloader);
 
 // Selector de Pestañas Principales (Cotizador, Historial, Aceptadas, Estadísticas)
 function switchMainTab(tabKey) {
