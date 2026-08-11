@@ -232,47 +232,51 @@ const POSTAL_CODES_DB = [
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
-  renderRoomTabs();
-  renderItems();
-  initMap();
-  setupAutocomplete();
-  setupEventListeners();
-  updateCalculations();
-  updateHistoryBadge();
-  initInvoiceModule();
-  initCloudSync();
+  try {
+    renderRoomTabs();
+    renderItems();
+    initMap();
+    setupAutocomplete();
+    setupEventListeners();
+    updateCalculations();
+    updateHistoryBadge();
+    initInvoiceModule();
+    initCloudSync();
 
-  // Asegurar que siempre inicie en modo público con las 4 pestañas originales
-  state.invoiceAuth.isAuthenticated = false;
-  const publicNav = document.getElementById('public-top-nav-bar');
-  const invoiceNav = document.getElementById('invoice-top-nav-bar');
-  const factView = document.getElementById('view-facturacion');
-  const btnHeaderLogin = document.getElementById('btn-header-login');
-  const headerAuthUser = document.getElementById('header-auth-user');
+    // Asegurar que siempre inicie en modo público con las 4 pestañas originales
+    state.invoiceAuth.isAuthenticated = false;
+    const publicNav = document.getElementById('public-top-nav-bar');
+    const invoiceNav = document.getElementById('invoice-top-nav-bar');
+    const factView = document.getElementById('view-facturacion');
+    const btnHeaderLogin = document.getElementById('btn-header-login');
+    const headerAuthUser = document.getElementById('header-auth-user');
 
-  if (publicNav) publicNav.style.display = 'block';
-  if (invoiceNav) invoiceNav.style.display = 'none';
-  if (factView) factView.style.display = 'none';
-  if (btnHeaderLogin) btnHeaderLogin.style.display = 'inline-flex';
-  if (headerAuthUser) headerAuthUser.style.display = 'none';
+    if (publicNav) publicNav.style.display = 'block';
+    if (invoiceNav) invoiceNav.style.display = 'none';
+    if (factView) factView.style.display = 'none';
+    if (btnHeaderLogin) btnHeaderLogin.style.display = 'inline-flex';
+    if (headerAuthUser) headerAuthUser.style.display = 'none';
 
-  switchMainTab('cotizador');
-  hidePreloader();
+    switchMainTab('cotizador');
+  } catch (err) {
+    console.warn('Init warning:', err);
+  } finally {
+    hidePreloader();
+  }
 });
 
 // Desvanecer Preloader / Splash Screen de carga inicial con el logo de la empresa
 function hidePreloader() {
   const preloader = document.getElementById('app-preloader');
-  if (preloader) {
+  if (preloader && !preloader.classList.contains('fade-out')) {
+    preloader.classList.add('fade-out');
     setTimeout(() => {
-      preloader.classList.add('fade-out');
-      setTimeout(() => {
-        preloader.style.display = 'none';
-      }, 600);
-    }, 700);
+      preloader.style.display = 'none';
+    }, 500);
   }
 }
 
+setTimeout(hidePreloader, 900);
 window.addEventListener('load', hidePreloader);
 
 // ==========================================================================
@@ -547,12 +551,18 @@ function closeLoginModal() {
   if (modal) modal.classList.remove('active');
 }
 
-// Selector de las 2 Hojas del Módulo de Facturación en la Barra Azul Superior
+// Selector de las 2 Hojas del Módulo de Facturación
 function switchInvoiceSubTab(subTabKey) {
   const viewEmitir = document.getElementById('subview-invoice-emitir');
   const viewRegistro = document.getElementById('subview-invoice-registro');
+  
+  // Pestañas superiores (Barra Azul)
   const tabEmitir = document.getElementById('tab-btn-invoice-emitir');
   const tabRegistro = document.getElementById('tab-btn-invoice-registro');
+
+  // Pestañas internas (Panel de Facturación)
+  const btnInnerEmitir = document.getElementById('btn-inner-invtab-emitir');
+  const btnInnerRegistro = document.getElementById('btn-inner-invtab-registro');
 
   if (subTabKey === 'registro') {
     if (viewEmitir) viewEmitir.style.display = 'none';
@@ -561,6 +571,17 @@ function switchInvoiceSubTab(subTabKey) {
     if (tabEmitir) tabEmitir.classList.remove('active');
     if (tabRegistro) tabRegistro.classList.add('active');
 
+    if (btnInnerEmitir) {
+      btnInnerEmitir.style.background = '#F1F5F9';
+      btnInnerEmitir.style.color = 'var(--dark)';
+      btnInnerEmitir.style.border = '1px solid var(--border)';
+    }
+    if (btnInnerRegistro) {
+      btnInnerRegistro.style.background = 'var(--primary)';
+      btnInnerRegistro.style.color = 'white';
+      btnInnerRegistro.style.border = 'none';
+    }
+
     renderInvoicesHistoryTable();
   } else {
     if (viewEmitir) viewEmitir.style.display = 'block';
@@ -568,6 +589,17 @@ function switchInvoiceSubTab(subTabKey) {
 
     if (tabEmitir) tabEmitir.classList.add('active');
     if (tabRegistro) tabRegistro.classList.remove('active');
+
+    if (btnInnerEmitir) {
+      btnInnerEmitir.style.background = 'var(--primary)';
+      btnInnerEmitir.style.color = 'white';
+      btnInnerEmitir.style.border = 'none';
+    }
+    if (btnInnerRegistro) {
+      btnInnerRegistro.style.background = '#F1F5F9';
+      btnInnerRegistro.style.color = 'var(--dark)';
+      btnInnerRegistro.style.border = '1px solid var(--border)';
+    }
 
     renderInvoiceItems();
     updateInvoiceTotals();
@@ -586,8 +618,15 @@ function switchToInvoiceMode() {
   // 2. Intercambiar la barra de navegación en la parte azul superior
   const publicNav = document.getElementById('public-top-nav-bar');
   const invoiceNav = document.getElementById('invoice-top-nav-bar');
-  if (publicNav) publicNav.style.display = 'none';
-  if (invoiceNav) invoiceNav.style.display = 'block';
+  if (publicNav) {
+    publicNav.style.display = 'none';
+    publicNav.style.visibility = 'hidden';
+  }
+  if (invoiceNav) {
+    invoiceNav.style.display = 'block';
+    invoiceNav.style.visibility = 'visible';
+    invoiceNav.style.opacity = '1';
+  }
 
   // 3. Mostrar el Módulo de Facturación completo
   const factView = document.getElementById('view-facturacion');
@@ -635,6 +674,7 @@ function logoutInvoiceAdmin() {
   if (publicNav) {
     publicNav.style.display = 'block';
     publicNav.style.visibility = 'visible';
+    publicNav.style.opacity = '1';
   }
   if (invoiceNav) {
     invoiceNav.style.display = 'none';
@@ -1775,12 +1815,13 @@ function updateHistoryBadge() {
   const badgeCompleted = document.getElementById('completed-count-badge');
   const totalCompletedBadge = document.getElementById('stats-total-badge');
 
-  const acceptedCount = state.savedQuotes.filter(q => q.status === 'Aceptado').length;
-  const completedCount = state.savedQuotes.filter(q => q.status === 'Completado' || q.status === 'Realizada').length;
-  const operationalCount = state.savedQuotes.filter(q => q.status === 'Aceptado' || q.status === 'Completado' || q.status === 'Realizada').length;
+  const quotes = (state.savedQuotes || []).filter(q => q && typeof q === 'object');
+  const acceptedCount = quotes.filter(q => q.status === 'Aceptado').length;
+  const completedCount = quotes.filter(q => q.status === 'Completado' || q.status === 'Realizada').length;
+  const operationalCount = quotes.filter(q => q.status === 'Aceptado' || q.status === 'Completado' || q.status === 'Realizada').length;
 
-  if (badgeHistory) badgeHistory.innerText = state.savedQuotes.length;
-  if (totalHistoryText) totalHistoryText.innerText = `${state.savedQuotes.length} presupuestos registrados`;
+  if (badgeHistory) badgeHistory.innerText = quotes.length;
+  if (totalHistoryText) totalHistoryText.innerText = `${quotes.length} presupuestos registrados`;
 
   if (badgeAccepted) badgeAccepted.innerText = acceptedCount;
   if (totalAcceptedText) totalAcceptedText.innerText = `${acceptedCount} servicios confirmados`;
@@ -1929,29 +1970,32 @@ function renderHistoryTable() {
   const tbody = document.getElementById('history-tbody');
   if (!tbody) return;
 
-  let filteredQuotes = state.savedQuotes;
+  let filteredQuotes = (state.savedQuotes || []).filter(item => item && typeof item === 'object');
 
   // 1. Filtrar por Estado
   if (state.historyStatusFilter && state.historyStatusFilter !== 'all') {
     filteredQuotes = filteredQuotes.filter(item => {
+      const status = item.status || 'Pendiente';
       if (state.historyStatusFilter === 'Completado') {
-        return item.status === 'Completado' || item.status === 'Realizada';
+        return status === 'Completado' || status === 'Realizada';
       }
-      return item.status === state.historyStatusFilter;
+      return status === state.historyStatusFilter;
     });
   }
 
   // 2. Filtrar por texto
   if (state.historySearchQuery) {
-    const q = state.historySearchQuery;
-    filteredQuotes = filteredQuotes.filter(item => 
-      item.id.toLowerCase().includes(q) ||
-      (item.serviceMode && item.serviceMode.toLowerCase().includes(q)) ||
-      (item.client.name && item.client.name.toLowerCase().includes(q)) ||
-      (item.client.phone && item.client.phone.includes(q)) ||
-      (item.client.origin && item.client.origin.toLowerCase().includes(q)) ||
-      (item.client.destination && item.client.destination.toLowerCase().includes(q))
-    );
+    const q = state.historySearchQuery.toLowerCase();
+    filteredQuotes = filteredQuotes.filter(item => {
+      const id = String(item.id || '').toLowerCase();
+      const mode = String(item.serviceMode || '').toLowerCase();
+      const client = item.client || {};
+      const name = String(client.name || '').toLowerCase();
+      const phone = String(client.phone || '').toLowerCase();
+      const origin = String(client.origin || '').toLowerCase();
+      const dest = String(client.destination || '').toLowerCase();
+      return id.includes(q) || mode.includes(q) || name.includes(q) || phone.includes(q) || origin.includes(q) || dest.includes(q);
+    });
   }
 
   if (filteredQuotes.length === 0) {
@@ -1967,49 +2011,64 @@ function renderHistoryTable() {
   }
 
   tbody.innerHTML = filteredQuotes.map(q => {
+    const status = q.status || 'Pendiente';
     let statusClass = 'pendiente';
-    if (q.status === 'Aceptado') statusClass = 'aceptado';
-    else if (q.status === 'Rechazado') statusClass = 'rechazado';
-    else if (q.status === 'En Proceso') statusClass = 'en_proceso';
-    else if (q.status === 'Completado' || q.status === 'Realizada') statusClass = 'completado';
+    if (status === 'Aceptado') statusClass = 'aceptado';
+    else if (status === 'Rechazado') statusClass = 'rechazado';
+    else if (status === 'En Proceso') statusClass = 'en_proceso';
+    else if (status === 'Completado' || status === 'Realizada') statusClass = 'completado';
 
     const isTransport = q.serviceMode === 'transporte';
     const modeBadge = isTransport 
       ? '<span style="background: #E0E7FF; color: #3730A3; font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">TRANSPORTE</span>'
       : '<span style="background: #EBF4FC; color: var(--primary); font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">MUDANZA</span>';
 
+    const client = q.client || {};
+    const clientName = client.name || 'Cliente Particular';
+    const clientPhone = client.phone || '-';
+    const clientOrigin = client.origin || 'Madrid';
+    const clientDest = client.destination || 'España';
+
+    const totalM3 = Number(q.totalM3 || 0);
+    const totalItems = q.totalItems || 0;
+    const trucksQty = q.trucks || 1;
+    const staffQty = q.staff || 1;
+    const sugTotal = Number(q.suggestedTotal || q.finalPrice || 0);
+    const finalTotal = Number(q.finalPrice || q.suggestedTotal || 0);
+    const formattedDate = q.formattedDate || (q.timestamp ? new Date(q.timestamp).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES'));
+
     const logisticsDesc = isTransport
-      ? `<strong>${q.trucks || 1} camión/es (18 m³)</strong><br><span style="font-size: 0.78rem; color: var(--text-muted);">${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Carga directa'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</span>`
-      : `<strong>${q.totalM3.toFixed(2)} m³</strong> (${q.totalItems} uds)<br><span style="font-size: 0.78rem; color: var(--text-muted);">${q.trucks} cam. (18m³) / ${q.staff} mozos</span>`;
+      ? `<strong>${trucksQty} camión/es (18 m³)</strong><br><span style="font-size: 0.78rem; color: var(--text-muted);">${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Carga directa'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</span>`
+      : `<strong>${totalM3.toFixed(2)} m³</strong> (${totalItems} uds)<br><span style="font-size: 0.78rem; color: var(--text-muted);">${trucksQty} cam. (18m³) / ${staffQty} mozos</span>`;
 
     return `
       <tr>
         <td>
           <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
-            <strong style="color: var(--primary);">${q.id}</strong>
+            <strong style="color: var(--primary);">${q.id || 'PRE-000'}</strong>
             ${modeBadge}
           </div>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">${q.formattedDate}</span>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">${formattedDate}</span>
         </td>
         <td>
-          <strong>${q.client.name || 'Cliente Particular'}</strong><br>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">${q.client.phone || '-'}</span>
+          <strong>${clientName}</strong><br>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">${clientPhone}</span>
         </td>
         <td style="font-size: 0.82rem;">
-          <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${truncateText(q.client.origin, 20)}<br>
-          <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> ${truncateText(q.client.destination, 20)}
+          <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${truncateText(clientOrigin, 20)}<br>
+          <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> ${truncateText(clientDest, 20)}
         </td>
         <td>
           ${logisticsDesc}
         </td>
-        <td style="color: var(--text-muted);">${q.suggestedTotal.toFixed(2)} €</td>
-        <td style="font-weight: 700; color: var(--primary); font-size: 1rem;">${q.finalPrice.toFixed(2)} €</td>
+        <td style="color: var(--text-muted);">${sugTotal.toFixed(2)} €</td>
+        <td style="font-weight: 700; color: var(--primary); font-size: 1rem;">${finalTotal.toFixed(2)} €</td>
         <td>
-          <span class="status-badge ${statusClass}">${q.status}</span>
+          <span class="status-badge ${statusClass}">${status}</span>
         </td>
         <td style="text-align: center;">
           <div style="display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap;">
-            ${q.status !== 'Aceptado' && q.status !== 'Completado' ? `
+            ${status !== 'Aceptado' && status !== 'Completado' ? `
               <button class="btn-status-accept" onclick="updateQuoteStatus('${q.id}', 'Aceptado')">
                 <i class="fa-solid fa-check"></i> Aceptar
               </button>
@@ -2035,7 +2094,7 @@ function renderAcceptedMovesView() {
   const container = document.getElementById('accepted-grid-container');
   if (!container) return;
 
-  const acceptedQuotes = state.savedQuotes.filter(q => q.status === 'Aceptado');
+  const acceptedQuotes = (state.savedQuotes || []).filter(q => q && (q.status === 'Aceptado'));
 
   if (acceptedQuotes.length === 0) {
     container.innerHTML = `
@@ -2051,27 +2110,32 @@ function renderAcceptedMovesView() {
   container.innerHTML = acceptedQuotes.map(q => {
     const isTransport = q.serviceMode === 'transporte';
     const serviceTitle = isTransport ? '🚚 SERVICIO DE TRANSPORTE' : '🏠 MUDANZA INTEGRAL';
+    const client = q.client || {};
+    const totalM3 = Number(q.totalM3 || 0);
+    const finalPrice = Number(q.finalPrice || q.suggestedTotal || 0);
+    const trucksQty = q.trucks || 1;
+    const staffQty = q.staff || 1;
 
     const detailsBox = isTransport
-      ? `<div><i class="fa-solid fa-truck"></i> <strong>Flota Asignada:</strong> ${q.trucks || 1} camión/es (18 m³ con Plataforma)</div>
+      ? `<div><i class="fa-solid fa-truck"></i> <strong>Flota Asignada:</strong> ${trucksQty} camión/es (18 m³ con Plataforma)</div>
          <div><i class="fa-solid fa-boxes-stacked"></i> <strong>Carga:</strong> ${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Porte directo'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</div>`
-      : `<div><i class="fa-solid fa-boxes-stacked"></i> <strong>Volumen Total:</strong> ${q.totalM3.toFixed(2)} m³ (${q.totalItems} ítems)</div>
-         <div><i class="fa-solid fa-truck"></i> <strong>Logística:</strong> ${q.trucks} camión/es (18m³) | ${q.staff} mozos (${q.distanceKm} km)</div>`;
+      : `<div><i class="fa-solid fa-boxes-stacked"></i> <strong>Volumen Total:</strong> ${totalM3.toFixed(2)} m³ (${q.totalItems || 0} ítems)</div>
+         <div><i class="fa-solid fa-truck"></i> <strong>Logística:</strong> ${trucksQty} camión/es (18m³) | ${staffQty} mozos (${q.distanceKm || 0} km)</div>`;
 
     return `
       <div class="accepted-card animated-item">
         <div class="accepted-card-header">
           <div class="accepted-card-title">
-            <h3>${q.client.name || 'Cliente Particular'}</h3>
-            <p><i class="fa-solid fa-hashtag"></i> ${q.id} • <strong>${serviceTitle}</strong></p>
+            <h3>${client.name || 'Cliente Particular'}</h3>
+            <p><i class="fa-solid fa-hashtag"></i> ${q.id || 'PRE-000'} • <strong>${serviceTitle}</strong></p>
           </div>
           <span class="status-badge aceptado"><i class="fa-solid fa-circle-check"></i> ACEPTADO</span>
         </div>
 
         <div class="accepted-card-body">
-          <p><i class="fa-solid fa-phone" style="color: var(--primary);"></i> <strong>Teléfono:</strong> ${q.client.phone || 'No especificado'}</p>
-          <p><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> <strong>Origen:</strong> ${q.client.origin || '-'}</p>
-          <p><i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> <strong>Destino:</strong> ${q.client.destination || '-'}</p>
+          <p><i class="fa-solid fa-phone" style="color: var(--primary);"></i> <strong>Teléfono:</strong> ${client.phone || 'No especificado'}</p>
+          <p><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> <strong>Origen:</strong> ${client.origin || '-'}</p>
+          <p><i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> <strong>Destino:</strong> ${client.destination || '-'}</p>
           
           <div style="background: var(--bg-app); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); margin-top: 0.4rem; font-size: 0.82rem;">
             ${detailsBox}
@@ -2081,7 +2145,7 @@ function renderAcceptedMovesView() {
         <div class="accepted-card-footer">
           <div>
             <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">IMPORTE ACORDADO</span>
-            <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">${q.finalPrice.toFixed(2)} €</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">${finalPrice.toFixed(2)} €</div>
           </div>
 
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
@@ -2091,7 +2155,7 @@ function renderAcceptedMovesView() {
             <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar Hoja de Trabajo / PDF">
               <i class="fa-solid fa-file-pdf"></i> Hoja PDF
             </button>
-            <a href="tel:${q.client.phone}" class="btn-action-sm" style="text-decoration: none;" title="Llamar Cliente">
+            <a href="tel:${client.phone}" class="btn-action-sm" style="text-decoration: none;" title="Llamar Cliente">
               <i class="fa-solid fa-phone"></i>
             </a>
           </div>
@@ -2103,12 +2167,13 @@ function renderAcceptedMovesView() {
 
 // Render Dashboard de Estadísticas y Tasa de Conversión (Muestra tanto Aceptados como Realizados)
 function renderStatisticsDashboard() {
-  const allQuotes = state.savedQuotes;
+  const allQuotes = (state.savedQuotes || []).filter(q => q && typeof q === 'object');
   
   // Todos los servicios que han sido aceptados o completados
-  const operationalQuotes = allQuotes.filter(q => 
-    q.status === 'Aceptado' || q.status === 'Completado' || q.status === 'Realizada' || q.status === 'En Proceso'
-  );
+  const operationalQuotes = allQuotes.filter(q => {
+    const status = q.status || '';
+    return status === 'Aceptado' || status === 'Completado' || status === 'Realizada' || status === 'En Proceso';
+  });
 
   const completedQuotes = allQuotes.filter(q => q.status === 'Completado' || q.status === 'Realizada');
   const tbody = document.getElementById('completed-tbody');
@@ -2118,9 +2183,9 @@ function renderStatisticsDashboard() {
   let totalKm = 0;
 
   operationalQuotes.forEach(q => {
-    totalRevenue += (q.finalPrice || 0);
-    totalM3 += (q.totalM3 || 0);
-    totalKm += (q.distanceKm || 0);
+    totalRevenue += Number(q.finalPrice || q.suggestedTotal || 0);
+    totalM3 += Number(q.totalM3 || 0);
+    totalKm += Number(q.distanceKm || 0);
   });
 
   const totalQuotesCount = allQuotes.length;
@@ -2139,10 +2204,15 @@ function renderStatisticsDashboard() {
   if (elConversionBar) elConversionBar.style.width = `${Math.min(100, conversionRate)}%`;
 
   // Actualizar demás KPIs
-  document.getElementById('kpi-total-revenue').innerText = `${totalRevenue.toFixed(2)} €`;
-  document.getElementById('kpi-total-moves').innerText = totalMovesCount;
-  document.getElementById('kpi-total-m3').innerText = `${totalM3.toFixed(2)} m³`;
-  document.getElementById('kpi-avg-ticket').innerText = `${avgTicket.toFixed(2)} €`;
+  const elRevenue = document.getElementById('kpi-total-revenue');
+  const elMoves = document.getElementById('kpi-total-moves');
+  const elM3 = document.getElementById('kpi-total-m3');
+  const elAvg = document.getElementById('kpi-avg-ticket');
+
+  if (elRevenue) elRevenue.innerText = `${totalRevenue.toFixed(2)} €`;
+  if (elMoves) elMoves.innerText = totalMovesCount;
+  if (elM3) elM3.innerText = `${totalM3.toFixed(2)} m³`;
+  if (elAvg) elAvg.innerText = `${avgTicket.toFixed(2)} €`;
 
   if (!tbody) return;
 
@@ -2165,46 +2235,51 @@ function renderStatisticsDashboard() {
       ? '<span style="background: #E0E7FF; color: #3730A3; font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">TRANSPORTE</span>'
       : '<span style="background: #EBF4FC; color: var(--primary); font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">MUDANZA</span>';
 
+    const status = q.status || 'Pendiente';
     let statusBadge = '';
-    if (q.status === 'Aceptado') {
+    if (status === 'Aceptado') {
       statusBadge = '<span class="status-badge aceptado"><i class="fa-solid fa-check"></i> Aceptado</span>';
-    } else if (q.status === 'Completado' || q.status === 'Realizada') {
+    } else if (status === 'Completado' || status === 'Realizada') {
       statusBadge = '<span class="status-badge completado" style="background: #D1FAE5; color: #065F46;"><i class="fa-solid fa-circle-check"></i> Realizado</span>';
     } else {
-      statusBadge = `<span class="status-badge en_proceso">${q.status}</span>`;
+      statusBadge = `<span class="status-badge en_proceso">${status}</span>`;
     }
 
+    const client = q.client || {};
+    const totalM3 = Number(q.totalM3 || 0);
+    const finalPrice = Number(q.finalPrice || q.suggestedTotal || 0);
     const vehicleText = `${q.trucks || 1} camión/es (18 m³) con Plataforma`;
+    const dateText = q.completedDate || client.date || q.formattedDate || '-';
 
     return `
       <tr>
         <td>
           <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
-            <strong style="color: var(--primary);">${q.id}</strong>
+            <strong style="color: var(--primary);">${q.id || 'PRE-000'}</strong>
             ${modeBadge}
           </div>
           ${statusBadge}
         </td>
         <td>
-          <strong>${q.client.name || 'Cliente Particular'}</strong><br>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">${q.client.phone || '-'}</span>
+          <strong>${client.name || 'Cliente Particular'}</strong><br>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">${client.phone || '-'}</span>
         </td>
         <td>
-          <strong>${q.completedDate || q.client.date || q.formattedDate}</strong>
+          <strong>${dateText}</strong>
         </td>
         <td style="font-size: 0.82rem;">
-          <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${truncateText(q.client.origin, 20)}<br>
-          <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> ${truncateText(q.client.destination, 20)}
+          <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${truncateText(client.origin || 'Madrid', 20)}<br>
+          <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> ${truncateText(client.destination || 'España', 20)}
         </td>
         <td>
-          <strong>${q.totalM3.toFixed(2)} m³</strong><br>
+          <strong>${totalM3.toFixed(2)} m³</strong><br>
           <span style="font-size: 0.75rem; color: var(--text-muted);">${vehicleText}</span>
         </td>
         <td>
-          ${q.distanceKm} km
+          ${q.distanceKm || 0} km
         </td>
         <td style="font-weight: 800; color: #059669; font-size: 1.05rem;">
-          ${q.finalPrice.toFixed(2)} €
+          ${finalPrice.toFixed(2)} €
         </td>
         <td style="text-align: center;">
           <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar Comprobante PDF">
@@ -2825,47 +2900,6 @@ function saveInvoiceRecord() {
   alert(`Factura ${invoiceRecord.id} guardada correctamente en el registro.`);
 }
 
-// Selector de las 2 Hojas del Módulo de Facturación (1. Emitir vs 2. Facturas Emitidas y Métricas)
-function switchInvoiceSubTab(subTabKey) {
-  const viewEmitir = document.getElementById('subview-invoice-emitir');
-  const viewRegistro = document.getElementById('subview-invoice-registro');
-  const btnEmitir = document.getElementById('btn-invtab-emitir');
-  const btnRegistro = document.getElementById('btn-invtab-registro');
-
-  if (subTabKey === 'registro') {
-    if (viewEmitir) viewEmitir.style.display = 'none';
-    if (viewRegistro) viewRegistro.style.display = 'block';
-
-    if (btnEmitir) {
-      btnEmitir.style.color = 'var(--text-muted)';
-      btnEmitir.style.background = 'var(--bg-app)';
-      btnEmitir.style.borderBottom = '1.5px solid var(--border)';
-    }
-    if (btnRegistro) {
-      btnRegistro.style.color = 'var(--dark)';
-      btnRegistro.style.background = 'white';
-      btnRegistro.style.borderBottom = '3px solid var(--primary)';
-    }
-    renderInvoicesHistoryTable();
-  } else {
-    if (viewEmitir) viewEmitir.style.display = 'block';
-    if (viewRegistro) viewRegistro.style.display = 'none';
-
-    if (btnEmitir) {
-      btnEmitir.style.color = 'var(--dark)';
-      btnEmitir.style.background = 'white';
-      btnEmitir.style.borderBottom = '3px solid var(--primary)';
-    }
-    if (btnRegistro) {
-      btnRegistro.style.color = 'var(--text-muted)';
-      btnRegistro.style.background = 'var(--bg-app)';
-      btnRegistro.style.borderBottom = '1.5px solid var(--border)';
-    }
-    renderInvoiceItems();
-    updateInvoiceTotals();
-  }
-}
-
 function updateInvoiceBadge() {
   const totalCount = state.savedInvoices.length;
   const totalAmount = state.savedInvoices.reduce((acc, inv) => acc + (parseFloat(inv.grandTotal) || 0), 0);
@@ -2876,9 +2910,12 @@ function updateInvoiceBadge() {
   const pendingInvoices = state.savedInvoices.filter(inv => inv.status !== 'Cobrada');
   const pendingAmount = pendingInvoices.reduce((acc, inv) => acc + (parseFloat(inv.grandTotal) || 0), 0);
 
-  // Subtab badges
+  // Subtab badges (Tanto en la barra azul superior como en el panel interno)
   const subtabBadge = document.getElementById('invoices-subtab-badge');
   if (subtabBadge) subtabBadge.innerText = totalCount;
+
+  const innerBadge = document.getElementById('inner-invoices-subtab-badge');
+  if (innerBadge) innerBadge.innerText = totalCount;
 
   const countBadge = document.getElementById('invoices-saved-count');
   if (countBadge) countBadge.innerText = `${totalCount} facturas emitidas`;

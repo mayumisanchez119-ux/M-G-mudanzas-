@@ -39,6 +39,17 @@
     </div>
   </div>
 
+  <script>
+    // Garantía absoluta: el preloader se desvanece suavemente a los 900ms pase lo que pase
+    setTimeout(function() {
+      var p = document.getElementById('app-preloader');
+      if (p) {
+        p.classList.add('fade-out');
+        setTimeout(function() { p.style.display = 'none'; }, 500);
+      }
+    }, 900);
+  </script>
+
   <!-- Header principal estilo MG Transporte y Logística con Logo Oficial y Contacto -->
   <header class="header-bar">
     <div class="header-container">
@@ -956,6 +967,17 @@
             <i class="fa-solid fa-arrow-right-from-bracket"></i> Salir y Volver al Cotizador
           </button>
         </div>
+      </div>
+
+      <!-- Pestañas de Navegación del Módulo de Facturación -->
+      <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 0.75rem; flex-wrap: wrap;">
+        <button type="button" id="btn-inner-invtab-emitir" onclick="switchInvoiceSubTab('emitir')" style="background: var(--primary); color: white; border: none; font-weight: 700; padding: 0.65rem 1.25rem; font-size: 0.9rem; border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); transition: var(--transition);">
+          <i class="fa-solid fa-file-invoice"></i> 1. Emitir Factura Oficial
+        </button>
+        <button type="button" id="btn-inner-invtab-registro" onclick="switchInvoiceSubTab('registro')" style="background: #F1F5F9; color: var(--dark); border: 1px solid var(--border); font-weight: 600; padding: 0.65rem 1.25rem; font-size: 0.9rem; border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: var(--transition);">
+          <i class="fa-solid fa-folder-open"></i> 2. Facturas Emitidas y Registro
+          <span class="top-tab-badge" id="inner-invoices-subtab-badge" style="background: #10B981; color: white; padding: 0.15rem 0.5rem; border-radius: 50px; font-size: 0.75rem;">1</span>
+        </button>
       </div>
 
       <!-- HOJA A: EMITIR FACTURA OFICIAL -->
