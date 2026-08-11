@@ -251,6 +251,60 @@ body {
   color: var(--primary);
 }
 
+/* Botón e Indicador de Sincronización en la Nube */
+.btn-cloud-sync {
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 0.42rem 0.85rem;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-cloud-sync:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.sync-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.sync-indicator-dot.syncing {
+  background: #38BDF8;
+  box-shadow: 0 0 8px #38BDF8;
+}
+
+.sync-indicator-dot.offline {
+  background: #F59E0B;
+  box-shadow: 0 0 8px #F59E0B;
+}
+
+.sync-icon-spin {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.syncing-spin {
+  animation: spinSync 1s linear infinite;
+}
+
+@keyframes spinSync {
+  100% { transform: rotate(360deg); }
+}
+
 /* Sub-Barra de Navegación por 5 Pestañas */
 .top-nav-bar {
   background: rgba(0, 0, 0, 0.15);

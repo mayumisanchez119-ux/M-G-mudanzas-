@@ -46,10 +46,17 @@
         <img src="logo.png?v=original" alt="MG Transporte y Logística" id="company-logo-img" class="company-logo">
         <div class="brand-text">
           <h1>MG TRANSPORTE Y LOGÍSTICA</h1>
-          <p>Mudanzas, Transportes, Portes y Logística • Madrid y Envíos Nacionales</p>
+          <p>Servicios integrales de transporte y logística * España y Europa</p>
         </div>
       </a>
       <div class="header-actions">
+        <!-- Indicador de Sincronización en la Nube Multi-dispositivo -->
+        <button type="button" class="btn-cloud-sync" id="btn-cloud-sync" onclick="openSyncModal()" title="Sincronización en la Nube Multi-dispositivo Activa">
+          <span class="sync-indicator-dot" id="sync-indicator-dot"></span>
+          <span class="sync-text" id="sync-status-label">Nube Conectada</span>
+          <i class="fa-solid fa-arrows-rotate sync-icon-spin" id="sync-icon-spin"></i>
+        </button>
+
         <a href="tel:692264152" class="btn-contact-quick">
           <i class="fa-solid fa-phone"></i> 692 264 152
         </a>
@@ -1326,6 +1333,48 @@
           <i class="fa-solid fa-unlock"></i> Desbloquear Módulo
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal Informativo de Sincronización en la Nube -->
+  <div class="modal-overlay" id="modal-cloud-sync">
+    <div class="modal-box" style="max-width: 450px; padding: 2rem; border-top: 5px solid var(--success);">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <div style="width: 38px; height: 38px; background: #D1FAE5; color: #065F46; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0;">Sincronización en la Nube</h3>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeSyncModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.4;">
+        Tus presupuestos, clientes, mudanzas y facturas se sincronizan en tiempo real en todos tus ordenadores, móviles y tablets.
+      </p>
+
+      <div style="background: #F8FAFC; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
+          <span style="color: var(--text-muted);">Estado del Servidor:</span>
+          <strong style="color: var(--success);" id="modal-sync-server-status"><i class="fa-solid fa-circle-check"></i> En Línea / Conectado</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
+          <span style="color: var(--text-muted);">Última sincronización:</span>
+          <strong style="color: var(--dark);" id="modal-sync-last-time">Hace unos segundos</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
+          <span style="color: var(--text-muted);">Presupuestos en Nube:</span>
+          <strong style="color: var(--primary);" id="modal-sync-quotes-count">0 presupuestos</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.84rem;">
+          <span style="color: var(--text-muted);">Facturas en Nube:</span>
+          <strong style="color: var(--primary);" id="modal-sync-invoices-count">0 facturas</strong>
+        </div>
+      </div>
+
+      <button type="button" class="btn-export-pdf" onclick="manualCloudSync(true)" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
+        <i class="fa-solid fa-rotate"></i> Forzar Sincronización Ahora
+      </button>
     </div>
   </div>
 

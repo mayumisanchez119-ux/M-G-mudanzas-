@@ -2,6 +2,8 @@
 // MG TRANSPORTE Y LOGÍSTICA - LÓGICA DE APLICACIÓN, LOGO Y CONTROL EDITABLE
 // ==========================================================================
 
+const LOGO_BASE64 = 'data:image/png;base64,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';
+
 let state = {
   rooms: JSON.parse(JSON.stringify(INITIAL_ROOMS)),
   activeRoomId: 'all',
@@ -238,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCalculations();
   updateHistoryBadge();
   initInvoiceModule();
+  initCloudSync();
 
   // Asegurar que siempre inicie en modo público con las 4 pestañas originales
   state.invoiceAuth.isAuthenticated = false;
@@ -271,6 +274,204 @@ function hidePreloader() {
 }
 
 window.addEventListener('load', hidePreloader);
+
+// ==========================================================================
+// SISTEMA DE SINCRONIZACIÓN EN LA NUBE EN TIEMPO REAL (MULTI-DISPOSITIVO)
+// ==========================================================================
+const CLOUD_SYNC_URL = 'https://jsonblob.com/api/jsonBlob/019ff169-538e-70ec-aa0e-f9ddbfc4fe66';
+let isSyncing = false;
+let lastSyncTimestamp = null;
+let syncPollingInterval = null;
+
+async function syncFetchFromCloud(showToast = false) {
+  if (isSyncing) return;
+  isSyncing = true;
+  updateSyncUI('syncing');
+
+  try {
+    const response = await fetch(CLOUD_SYNC_URL, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-cache'
+    });
+
+    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+
+    const cloudData = await response.json();
+    if (cloudData && typeof cloudData === 'object') {
+      let hasChanges = false;
+
+      // 1. Sincronizar Presupuestos
+      if (Array.isArray(cloudData.savedQuotes)) {
+        const mergedQuotesMap = new Map();
+        
+        // Cargar locales
+        (state.savedQuotes || []).forEach(q => {
+          if (q && q.id) mergedQuotesMap.set(q.id, q);
+        });
+        
+        // Combinar con la nube
+        cloudData.savedQuotes.forEach(q => {
+          if (q && q.id) mergedQuotesMap.set(q.id, q);
+        });
+
+        const mergedQuotes = Array.from(mergedQuotesMap.values()).sort((a, b) => {
+          const tA = new Date(a.timestamp || a.createdAt || 0).getTime() || 0;
+          const tB = new Date(b.timestamp || b.createdAt || 0).getTime() || 0;
+          return tB - tA;
+        });
+
+        if (JSON.stringify(mergedQuotes) !== JSON.stringify(state.savedQuotes)) {
+          state.savedQuotes = mergedQuotes;
+          localStorage.setItem('mg_quotes_history', JSON.stringify(state.savedQuotes));
+          hasChanges = true;
+        }
+      }
+
+      // 2. Sincronizar Facturas
+      if (Array.isArray(cloudData.savedInvoices)) {
+        const mergedInvoicesMap = new Map();
+        (state.savedInvoices || []).forEach(inv => {
+          if (inv && inv.id) mergedInvoicesMap.set(inv.id, inv);
+        });
+        cloudData.savedInvoices.forEach(inv => {
+          if (inv && inv.id) mergedInvoicesMap.set(inv.id, inv);
+        });
+
+        const mergedInvoices = Array.from(mergedInvoicesMap.values());
+        if (JSON.stringify(mergedInvoices) !== JSON.stringify(state.savedInvoices)) {
+          state.savedInvoices = mergedInvoices;
+          localStorage.setItem('mg_invoices_history', JSON.stringify(state.savedInvoices));
+          hasChanges = true;
+        }
+      }
+
+      if (hasChanges) {
+        updateHistoryBadge();
+        updateInvoiceBadge();
+        if (state.activeMainTab === 'historial') renderHistoryTable();
+        else if (state.activeMainTab === 'aceptadas') renderAcceptedMovesView();
+        else if (state.activeMainTab === 'estadisticas') renderStatisticsDashboard();
+        renderInvoicesHistoryTable();
+      }
+
+      lastSyncTimestamp = new Date();
+      updateSyncUI('synced');
+
+      if (showToast) {
+        alert(`✅ Sincronización completada con la nube.\n${state.savedQuotes.length} presupuestos y ${state.savedInvoices.length} facturas actualizadas.`);
+      }
+    }
+  } catch (err) {
+    console.warn('Sync fetch error:', err);
+    updateSyncUI('offline');
+  } finally {
+    isSyncing = false;
+  }
+}
+
+async function syncPushToCloud() {
+  updateSyncUI('syncing');
+
+  try {
+    const payload = {
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'MG_Oficina',
+      savedQuotes: state.savedQuotes,
+      savedInvoices: state.savedInvoices
+    };
+
+    const response = await fetch(CLOUD_SYNC_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      lastSyncTimestamp = new Date();
+      updateSyncUI('synced');
+    } else {
+      updateSyncUI('offline');
+    }
+  } catch (err) {
+    console.warn('Sync push error:', err);
+    updateSyncUI('offline');
+  }
+}
+
+function updateSyncUI(status) {
+  const dot = document.getElementById('sync-indicator-dot');
+  const label = document.getElementById('sync-status-label');
+  const icon = document.getElementById('sync-icon-spin');
+  const modalStatus = document.getElementById('modal-sync-server-status');
+  const modalTime = document.getElementById('modal-sync-last-time');
+  const modalQuotes = document.getElementById('modal-sync-quotes-count');
+  const modalInvoices = document.getElementById('modal-sync-invoices-count');
+
+  if (status === 'syncing') {
+    if (dot) { dot.className = 'sync-indicator-dot syncing'; }
+    if (label) label.innerText = 'Sincronizando...';
+    if (icon) icon.classList.add('syncing-spin');
+  } else if (status === 'synced') {
+    if (dot) { dot.className = 'sync-indicator-dot'; }
+    if (label) label.innerText = 'Nube Conectada';
+    if (icon) icon.classList.remove('syncing-spin');
+    if (modalStatus) modalStatus.innerHTML = '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i> En Línea / Sincronizado';
+  } else {
+    if (dot) { dot.className = 'sync-indicator-dot offline'; }
+    if (label) label.innerText = 'Modo Local';
+    if (icon) icon.classList.remove('syncing-spin');
+    if (modalStatus) modalStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> Sin conexión (Local)';
+  }
+
+  if (modalTime && lastSyncTimestamp) {
+    modalTime.innerText = lastSyncTimestamp.toLocaleTimeString('es-ES');
+  }
+  if (modalQuotes) modalQuotes.innerText = `${(state.savedQuotes || []).length} presupuestos`;
+  if (modalInvoices) modalInvoices.innerText = `${(state.savedInvoices || []).length} facturas`;
+}
+
+function initCloudSync() {
+  // Sincronización inicial al abrir
+  syncFetchFromCloud();
+
+  // Polling automático cada 8 segundos para detectar cambios de otros dispositivos
+  if (syncPollingInterval) clearInterval(syncPollingInterval);
+  syncPollingInterval = setInterval(() => {
+    syncFetchFromCloud();
+  }, 8000);
+
+  // Sincronizar al volver a la pestaña o ventana
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      syncFetchFromCloud();
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    syncFetchFromCloud();
+  });
+}
+
+function manualCloudSync(showToast = true) {
+  syncFetchFromCloud(showToast);
+}
+
+function openSyncModal() {
+  const modal = document.getElementById('modal-cloud-sync');
+  if (modal) {
+    updateSyncUI(isSyncing ? 'syncing' : 'synced');
+    modal.classList.add('active');
+  }
+}
+
+function closeSyncModal() {
+  const modal = document.getElementById('modal-cloud-sync');
+  if (modal) modal.classList.remove('active');
+}
 
 // Selector de Pestañas Principales (Cotizador, Historial, Aceptadas, Estadísticas)
 function switchMainTab(tabKey) {
@@ -1631,6 +1832,7 @@ function saveQuoteToHistory() {
 
   state.savedQuotes.unshift(quoteRecord);
   localStorage.setItem('mg_quotes_history', JSON.stringify(state.savedQuotes));
+  syncPushToCloud();
 
   updateHistoryBadge();
   alert(`✅ Presupuesto ${quoteId} (${isTransport ? 'SOLO TRANSPORTE' : 'MUDANZA'}) guardado con éxito en el Historial.`);
@@ -1645,6 +1847,7 @@ function updateQuoteStatus(quoteId, newStatus) {
       quote.completedDate = new Date().toLocaleDateString('es-ES');
     }
     localStorage.setItem('mg_quotes_history', JSON.stringify(state.savedQuotes));
+    syncPushToCloud();
     updateHistoryBadge();
 
     if (state.activeMainTab === 'historial') {
@@ -1669,6 +1872,7 @@ function deleteQuoteFromHistory(quoteId) {
   if (confirm(`¿Está seguro de eliminar el presupuesto ${quoteId}?`)) {
     state.savedQuotes = state.savedQuotes.filter(q => q.id !== quoteId);
     localStorage.setItem('mg_quotes_history', JSON.stringify(state.savedQuotes));
+    syncPushToCloud();
     updateHistoryBadge();
     
     if (state.activeMainTab === 'historial') {
@@ -2099,24 +2303,22 @@ function generatePDFFromParams(params) {
   doc.setFillColor(0, 93, 170);
   doc.rect(0, 0, 210, 32, 'F');
 
-  // Integración del Logo Oficial Original Exacto
-  const logoImg = document.getElementById('company-logo-img');
-  if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-    try {
-      doc.addImage(logoImg, 'PNG', 12, 3.5, 46, 25);
-    } catch(e) {
-      console.warn('Logo draw error:', e);
-    }
+  // Integración del Logo Oficial con alta definición y fiabilidad total
+  try {
+    doc.addImage(LOGO_BASE64, 'PNG', 12, 3.5, 46, 25);
+  } catch(e) {
+    const logoImg = document.getElementById('company-logo-img');
+    if (logoImg) doc.addImage(logoImg, 'PNG', 12, 3.5, 46, 25);
   }
 
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13.5);
   doc.text('MG TRANSPORTE Y LOGÍSTICA', 62, 14);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.text('Mudanzas, Transportes, Portes y Logística • Madrid y Nacional', 62, 21);
+  doc.text('Servicios integrales de transporte y logística * España y Europa', 62, 21);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10.5);
@@ -2617,6 +2819,7 @@ function saveInvoiceRecord() {
   }
 
   localStorage.setItem('mg_invoices_history', JSON.stringify(state.savedInvoices));
+  syncPushToCloud();
   updateInvoiceBadge();
   renderInvoicesHistoryTable();
   alert(`Factura ${invoiceRecord.id} guardada correctamente en el registro.`);
@@ -2758,6 +2961,7 @@ function toggleInvoicePaidStatus(invId) {
 
   inv.status = (inv.status === 'Cobrada') ? 'Pendiente de Cobro' : 'Cobrada';
   localStorage.setItem('mg_invoices_history', JSON.stringify(state.savedInvoices));
+  syncPushToCloud();
   renderInvoicesHistoryTable();
 }
 
@@ -2765,6 +2969,7 @@ function deleteSavedInvoice(invId) {
   if (!confirm(`¿Desea eliminar la factura ${invId} del historial?`)) return;
   state.savedInvoices = state.savedInvoices.filter(i => i.id !== invId);
   localStorage.setItem('mg_invoices_history', JSON.stringify(state.savedInvoices));
+  syncPushToCloud();
   updateInvoiceBadge();
   renderInvoicesHistoryTable();
 }
@@ -2843,24 +3048,22 @@ function generateOfficialInvoicePDF(data) {
   doc.setFillColor(0, 93, 170);
   doc.rect(0, 0, 210, 32, 'F');
 
-  // Integración del Logo Oficial
-  const logoImg = document.getElementById('company-logo-img');
-  if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-    try {
-      doc.addImage(logoImg, 'PNG', 12, 3.5, 46, 25);
-    } catch(e) {
-      console.warn('Logo draw error:', e);
-    }
+  // Integración del Logo Oficial con alta definición y fiabilidad total
+  try {
+    doc.addImage(LOGO_BASE64, 'PNG', 12, 3.5, 46, 25);
+  } catch(e) {
+    const logoImg = document.getElementById('company-logo-img');
+    if (logoImg) doc.addImage(logoImg, 'PNG', 12, 3.5, 46, 25);
   }
 
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13.5);
   doc.text('MG TRANSPORTE Y LOGÍSTICA', 62, 14);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.text('Factura Oficial de Servicios • Mudanzas, Portes y Transporte de Mercancías', 62, 21);
+  doc.text('Servicios integrales de transporte y logística * España y Europa', 62, 21);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
