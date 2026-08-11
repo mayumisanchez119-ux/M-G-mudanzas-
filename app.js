@@ -2010,83 +2010,91 @@ function renderHistoryTable() {
     return;
   }
 
-  tbody.innerHTML = filteredQuotes.map(q => {
-    const status = q.status || 'Pendiente';
-    let statusClass = 'pendiente';
-    if (status === 'Aceptado') statusClass = 'aceptado';
-    else if (status === 'Rechazado') statusClass = 'rechazado';
-    else if (status === 'En Proceso') statusClass = 'en_proceso';
-    else if (status === 'Completado' || status === 'Realizada') statusClass = 'completado';
+  const rows = [];
+  for (let i = 0; i < filteredQuotes.length; i++) {
+    const q = filteredQuotes[i];
+    try {
+      const status = q.status || 'Pendiente';
+      let statusClass = 'pendiente';
+      if (status === 'Aceptado') statusClass = 'aceptado';
+      else if (status === 'Rechazado') statusClass = 'rechazado';
+      else if (status === 'En Proceso') statusClass = 'en_proceso';
+      else if (status === 'Completado' || status === 'Realizada') statusClass = 'completado';
 
-    const isTransport = q.serviceMode === 'transporte';
-    const modeBadge = isTransport 
-      ? '<span style="background: #E0E7FF; color: #3730A3; font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">TRANSPORTE</span>'
-      : '<span style="background: #EBF4FC; color: var(--primary); font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">MUDANZA</span>';
+      const isTransport = q.serviceMode === 'transporte';
+      const modeBadge = isTransport 
+        ? '<span style="background: #E0E7FF; color: #3730A3; font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">TRANSPORTE</span>'
+        : '<span style="background: #EBF4FC; color: var(--primary); font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">MUDANZA</span>';
 
-    const client = q.client || {};
-    const clientName = client.name || 'Cliente Particular';
-    const clientPhone = client.phone || '-';
-    const clientOrigin = client.origin || 'Madrid';
-    const clientDest = client.destination || 'España';
+      const client = q.client || {};
+      const clientName = client.name || 'Cliente Particular';
+      const clientPhone = client.phone || '-';
+      const clientOrigin = client.origin || 'Madrid';
+      const clientDest = client.destination || 'España';
 
-    const totalM3 = Number(q.totalM3 || 0);
-    const totalItems = q.totalItems || 0;
-    const trucksQty = q.trucks || 1;
-    const staffQty = q.staff || 1;
-    const sugTotal = Number(q.suggestedTotal || q.finalPrice || 0);
-    const finalTotal = Number(q.finalPrice || q.suggestedTotal || 0);
-    const formattedDate = q.formattedDate || (q.timestamp ? new Date(q.timestamp).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES'));
+      const totalM3 = Number(q.totalM3 || 0);
+      const totalItems = q.totalItems || 0;
+      const trucksQty = q.trucks || 1;
+      const staffQty = q.staff || 1;
+      const sugTotal = Number(q.suggestedTotal || q.finalPrice || 0);
+      const finalTotal = Number(q.finalPrice || q.suggestedTotal || 0);
+      const formattedDate = q.formattedDate || (q.timestamp ? new Date(q.timestamp).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES'));
 
-    const logisticsDesc = isTransport
-      ? `<strong>${trucksQty} camión/es (18 m³)</strong><br><span style="font-size: 0.78rem; color: var(--text-muted);">${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Carga directa'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</span>`
-      : `<strong>${totalM3.toFixed(2)} m³</strong> (${totalItems} uds)<br><span style="font-size: 0.78rem; color: var(--text-muted);">${trucksQty} cam. (18m³) / ${staffQty} mozos</span>`;
+      const logisticsDesc = isTransport
+        ? `<strong>${trucksQty} camión/es (18 m³)</strong><br><span style="font-size: 0.78rem; color: var(--text-muted);">${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Carga directa'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</span>`
+        : `<strong>${totalM3.toFixed(2)} m³</strong> (${totalItems} uds)<br><span style="font-size: 0.78rem; color: var(--text-muted);">${trucksQty} cam. (18m³) / ${staffQty} mozos</span>`;
 
-    return `
-      <tr>
-        <td>
-          <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
-            <strong style="color: var(--primary);">${q.id || 'PRE-000'}</strong>
-            ${modeBadge}
-          </div>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">${formattedDate}</span>
-        </td>
-        <td>
-          <strong>${clientName}</strong><br>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">${clientPhone}</span>
-        </td>
-        <td style="font-size: 0.82rem;">
-          <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${truncateText(clientOrigin, 20)}<br>
-          <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> ${truncateText(clientDest, 20)}
-        </td>
-        <td>
-          ${logisticsDesc}
-        </td>
-        <td style="color: var(--text-muted);">${sugTotal.toFixed(2)} €</td>
-        <td style="font-weight: 700; color: var(--primary); font-size: 1rem;">${finalTotal.toFixed(2)} €</td>
-        <td>
-          <span class="status-badge ${statusClass}">${status}</span>
-        </td>
-        <td style="text-align: center;">
-          <div style="display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap;">
-            ${status !== 'Aceptado' && status !== 'Completado' ? `
-              <button class="btn-status-accept" onclick="updateQuoteStatus('${q.id}', 'Aceptado')">
-                <i class="fa-solid fa-check"></i> Aceptar
+      rows.push(`
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
+              <strong style="color: var(--primary);">${q.id || 'PRE-000'}</strong>
+              ${modeBadge}
+            </div>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">${formattedDate}</span>
+          </td>
+          <td>
+            <strong>${clientName}</strong><br>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">${clientPhone}</span>
+          </td>
+          <td style="font-size: 0.82rem;">
+            <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${truncateText(clientOrigin, 20)}<br>
+            <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> ${truncateText(clientDest, 20)}
+          </td>
+          <td>
+            ${logisticsDesc}
+          </td>
+          <td style="color: var(--text-muted);">${sugTotal.toFixed(2)} €</td>
+          <td style="font-weight: 700; color: var(--primary); font-size: 1rem;">${finalTotal.toFixed(2)} €</td>
+          <td>
+            <span class="status-badge ${statusClass}">${status}</span>
+          </td>
+          <td style="text-align: center;">
+            <div style="display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap;">
+              ${status !== 'Aceptado' && status !== 'Completado' ? `
+                <button class="btn-status-accept" onclick="updateQuoteStatus('${q.id}', 'Aceptado')">
+                  <i class="fa-solid fa-check"></i> Aceptar
+                </button>
+              ` : ''}
+              <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar PDF">
+                <i class="fa-solid fa-file-pdf"></i>
               </button>
-            ` : ''}
-            <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar PDF">
-              <i class="fa-solid fa-file-pdf"></i>
-            </button>
-            <button class="btn-action-sm" onclick="loadQuoteIntoQuoter('${q.id}')" title="Cargar en Cotizador">
-              <i class="fa-solid fa-folder-open"></i>
-            </button>
-            <button class="btn-action-sm" onclick="deleteQuoteFromHistory('${q.id}')" title="Eliminar" style="color: var(--danger);">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+              <button class="btn-action-sm" onclick="loadQuoteIntoQuoter('${q.id}')" title="Cargar en Cotizador">
+                <i class="fa-solid fa-folder-open"></i>
+              </button>
+              <button class="btn-action-sm" onclick="deleteQuoteFromHistory('${q.id}')" title="Eliminar" style="color: var(--danger);">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `);
+    } catch(err) {
+      console.warn('Error rendering quote row:', q, err);
+    }
+  }
+
+  tbody.innerHTML = rows.join('');
 }
 
 // Render Accepted Moves / Transport Jobs Grid Panel
@@ -2107,62 +2115,70 @@ function renderAcceptedMovesView() {
     return;
   }
 
-  container.innerHTML = acceptedQuotes.map(q => {
-    const isTransport = q.serviceMode === 'transporte';
-    const serviceTitle = isTransport ? '🚚 SERVICIO DE TRANSPORTE' : '🏠 MUDANZA INTEGRAL';
-    const client = q.client || {};
-    const totalM3 = Number(q.totalM3 || 0);
-    const finalPrice = Number(q.finalPrice || q.suggestedTotal || 0);
-    const trucksQty = q.trucks || 1;
-    const staffQty = q.staff || 1;
+  const cards = [];
+  for (let i = 0; i < acceptedQuotes.length; i++) {
+    const q = acceptedQuotes[i];
+    try {
+      const isTransport = q.serviceMode === 'transporte';
+      const serviceTitle = isTransport ? '🚚 SERVICIO DE TRANSPORTE' : '🏠 MUDANZA INTEGRAL';
+      const client = q.client || {};
+      const totalM3 = Number(q.totalM3 || 0);
+      const finalPrice = Number(q.finalPrice || q.suggestedTotal || 0);
+      const trucksQty = q.trucks || 1;
+      const staffQty = q.staff || 1;
 
-    const detailsBox = isTransport
-      ? `<div><i class="fa-solid fa-truck"></i> <strong>Flota Asignada:</strong> ${trucksQty} camión/es (18 m³ con Plataforma)</div>
-         <div><i class="fa-solid fa-boxes-stacked"></i> <strong>Carga:</strong> ${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Porte directo'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</div>`
-      : `<div><i class="fa-solid fa-boxes-stacked"></i> <strong>Volumen Total:</strong> ${totalM3.toFixed(2)} m³ (${q.totalItems || 0} ítems)</div>
-         <div><i class="fa-solid fa-truck"></i> <strong>Logística:</strong> ${trucksQty} camión/es (18m³) | ${staffQty} mozos (${q.distanceKm || 0} km)</div>`;
+      const detailsBox = isTransport
+        ? `<div><i class="fa-solid fa-truck"></i> <strong>Flota Asignada:</strong> ${trucksQty} camión/es (18 m³ con Plataforma)</div>
+           <div><i class="fa-solid fa-boxes-stacked"></i> <strong>Carga:</strong> ${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Porte directo'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</div>`
+        : `<div><i class="fa-solid fa-boxes-stacked"></i> <strong>Volumen Total:</strong> ${totalM3.toFixed(2)} m³ (${q.totalItems || 0} ítems)</div>
+           <div><i class="fa-solid fa-truck"></i> <strong>Logística:</strong> ${trucksQty} camión/es (18m³) | ${staffQty} mozos (${q.distanceKm || 0} km)</div>`;
 
-    return `
-      <div class="accepted-card animated-item">
-        <div class="accepted-card-header">
-          <div class="accepted-card-title">
-            <h3>${client.name || 'Cliente Particular'}</h3>
-            <p><i class="fa-solid fa-hashtag"></i> ${q.id || 'PRE-000'} • <strong>${serviceTitle}</strong></p>
+      cards.push(`
+        <div class="accepted-card animated-item">
+          <div class="accepted-card-header">
+            <div class="accepted-card-title">
+              <h3>${client.name || 'Cliente Particular'}</h3>
+              <p><i class="fa-solid fa-hashtag"></i> ${q.id || 'PRE-000'} • <strong>${serviceTitle}</strong></p>
+            </div>
+            <span class="status-badge aceptado"><i class="fa-solid fa-circle-check"></i> ACEPTADO</span>
           </div>
-          <span class="status-badge aceptado"><i class="fa-solid fa-circle-check"></i> ACEPTADO</span>
+
+          <div class="accepted-card-body">
+            <p><i class="fa-solid fa-phone" style="color: var(--primary);"></i> <strong>Teléfono:</strong> ${client.phone || 'No especificado'}</p>
+            <p><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> <strong>Origen:</strong> ${client.origin || '-'}</p>
+            <p><i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> <strong>Destino:</strong> ${client.destination || '-'}</p>
+            
+            <div style="background: var(--bg-app); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); margin-top: 0.4rem; font-size: 0.82rem;">
+              ${detailsBox}
+            </div>
+          </div>
+
+          <div class="accepted-card-footer">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">IMPORTE ACORDADO</span>
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">${finalPrice.toFixed(2)} €</div>
+            </div>
+
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <button class="btn-action-sm" style="background: #10B981; color: white; font-weight: 700;" onclick="markMoveAsCompleted('${q.id}')" title="Marcar como Servicio Realizado">
+                <i class="fa-solid fa-check-double"></i> Realizado
+              </button>
+              <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar Hoja de Trabajo / PDF">
+                <i class="fa-solid fa-file-pdf"></i> Hoja PDF
+              </button>
+              <a class="btn-action-sm" style="background: #25D366; color: white;" href="https://wa.me/${(client.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${client.name || ''}, le confirmamos los detalles de su servicio con MG Transporte y Logística.`)}" target="_blank" title="Contactar por WhatsApp">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+              </a>
+            </div>
+          </div>
         </div>
+      `);
+    } catch(err) {
+      console.warn('Error rendering accepted move card:', q, err);
+    }
+  }
 
-        <div class="accepted-card-body">
-          <p><i class="fa-solid fa-phone" style="color: var(--primary);"></i> <strong>Teléfono:</strong> ${client.phone || 'No especificado'}</p>
-          <p><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> <strong>Origen:</strong> ${client.origin || '-'}</p>
-          <p><i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> <strong>Destino:</strong> ${client.destination || '-'}</p>
-          
-          <div style="background: var(--bg-app); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); margin-top: 0.4rem; font-size: 0.82rem;">
-            ${detailsBox}
-          </div>
-        </div>
-
-        <div class="accepted-card-footer">
-          <div>
-            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">IMPORTE ACORDADO</span>
-            <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">${finalPrice.toFixed(2)} €</div>
-          </div>
-
-          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-            <button class="btn-action-sm" style="background: #10B981; color: white; font-weight: 700;" onclick="markMoveAsCompleted('${q.id}')" title="Marcar como Servicio Realizado">
-              <i class="fa-solid fa-check-double"></i> Realizado
-            </button>
-            <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar Hoja de Trabajo / PDF">
-              <i class="fa-solid fa-file-pdf"></i> Hoja PDF
-            </button>
-            <a href="tel:${client.phone}" class="btn-action-sm" style="text-decoration: none;" title="Llamar Cliente">
-              <i class="fa-solid fa-phone"></i>
-            </a>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  container.innerHTML = cards.join('');
 }
 
 // Render Dashboard de Estadísticas y Tasa de Conversión (Muestra tanto Aceptados como Realizados)
@@ -2598,9 +2614,11 @@ function generatePDFFromParams(params) {
   doc.save(`Presupuesto_MG_${isTransport ? 'Transporte' : 'Mudanza'}_${sanitizeName}.pdf`);
 }
 
-function truncateText(str, maxLength) {
-  if (!str) return '';
-  return str.length > maxLength ? str.substring(0, maxLength - 3) + '...' : str;
+function truncateText(str, maxLength = 25) {
+  if (str === null || str === undefined) return '';
+  const s = String(str).trim();
+  if (s.length <= maxLength) return s;
+  return s.substring(0, Math.max(0, maxLength - 3)) + '...';
 }
 
 // ==========================================================================
