@@ -2987,20 +2987,25 @@ function generatePDFFromParams(params) {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
-  doc.text('PLANIFICACIÓN LOGÍSTICA (Camiones de 18 m³ con Plataforma)', 20, finalY + 10);
+  doc.text('PLANIFICACIÓN LOGÍSTICA', 20, finalY + 9);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(147, 197, 253);
+  doc.text('Camiones de 18 m³ y plataforma elevadora', 20, finalY + 13);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(203, 213, 225);
 
   if (isTransport) {
-    doc.text(`• Servicio: Flete / Porte punto a punto (${params.distanceKm} km)`, 20, finalY + 18);
-    doc.text(`• Flota: ${params.trucks || 1} camión/es de 18 m³ con plataforma elevadora`, 20, finalY + 24);
-    doc.text(`• Seguro: Cobertura de mercancías en tránsito incluida`, 20, finalY + 30);
+    doc.text(`• Servicio: Flete / Porte punto a punto (${params.distanceKm} km)`, 20, finalY + 20);
+    doc.text(`• Flota: ${params.trucks || 1} camión/es de 18 m³ con plataforma elevadora`, 20, finalY + 26);
+    doc.text(`• Seguro: Cobertura de mercancías en tránsito incluida`, 20, finalY + 32);
   } else {
-    doc.text(`• Cubicaje Total: ${params.totalM3.toFixed(2)} m³ (${params.totalItems} objetos)`, 20, finalY + 18);
-    doc.text(`• Flota: ${params.trucks} camión/es de 18 m³ con plataforma elevadora`, 20, finalY + 24);
-    doc.text(`• Personal: ${params.staff} mozo/s de mudanza (${params.distanceKm} km)`, 20, finalY + 30);
+    doc.text(`• Cubicaje Total: ${params.totalM3.toFixed(2)} m³ (${params.totalItems} objetos)`, 20, finalY + 20);
+    doc.text(`• Flota: ${params.trucks} camión/es de 18 m³ con plataforma elevadora`, 20, finalY + 26);
+    doc.text(`• Personal: ${params.staff} mozo/s de mudanza (${params.distanceKm} km)`, 20, finalY + 32);
   }
 
   doc.setFont('helvetica', 'bold');
