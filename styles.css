@@ -1400,3 +1400,224 @@ select:focus-visible {
   align-items: center;
 }
 
+/* Diseño táctil: mantiene el cotizador completo y cómodo en teléfonos. */
+@media (max-width: 768px) {
+  .header-bar {
+    position: relative;
+    padding: 0.75rem 0.75rem 0;
+  }
+
+  .header-container {
+    display: block;
+    padding-bottom: 0.7rem;
+  }
+
+  .brand-logo {
+    gap: 0.65rem;
+    align-items: flex-start;
+  }
+
+  .company-logo {
+    height: 42px;
+    margin-top: 0.1rem;
+  }
+
+  .brand-text h1 {
+    font-size: 1.02rem;
+    line-height: 1.2;
+  }
+
+  .brand-text p {
+    font-size: 0.7rem;
+    line-height: 1.35;
+    margin-top: 0.15rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+  }
+
+  .header-actions > *,
+  #header-auth-container {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #header-auth-container .btn-contact-quick,
+  #header-auth-user {
+    width: 100%;
+  }
+
+  .btn-contact-quick,
+  .btn-cloud-sync {
+    min-height: 42px;
+    padding: 0.45rem 0.6rem;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 0.73rem;
+  }
+
+  .top-nav-bar {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .top-nav-container {
+    gap: 0.2rem;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .top-tab {
+    flex: 0 0 auto;
+    padding: 0.68rem 0.8rem;
+    font-size: 0.78rem;
+    min-height: 46px;
+  }
+
+  .main-wrapper,
+  #view-facturacion {
+    margin: 0.75rem auto;
+    padding: 0 0.75rem;
+    gap: 0.9rem;
+  }
+
+  .card-section {
+    padding: 1rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .section-header,
+  .service-mode-header,
+  .accepted-card-header,
+  .accepted-card-footer {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .section-title {
+    font-size: 1.02rem;
+    line-height: 1.3;
+  }
+
+  .service-mode-buttons,
+  .cargo-options-grid,
+  .accepted-cards-grid,
+  .stats-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Las cuadrículas creadas en línea para formularios pasan a una columna. */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [style*="min-width: 240px"],
+  [style*="min-width: 260px"],
+  [style*="min-width: 280px"] {
+    min-width: 0 !important;
+  }
+
+  .items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 0.7rem;
+  }
+
+  .item-card {
+    padding: 0.7rem;
+  }
+
+  .search-input-wrapper {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .history-table,
+  .invoice-items-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .history-table th,
+  .history-table td,
+  .invoice-items-table th,
+  .invoice-items-table td {
+    white-space: nowrap;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0.6rem;
+  }
+
+  .modal-box {
+    max-height: calc(100vh - 1.2rem);
+    overflow-y: auto;
+    padding: 1.2rem;
+    border-radius: var(--radius-md);
+  }
+
+  #invoice-login-wrapper {
+    min-height: auto;
+    padding: 1rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .company-logo {
+    height: 36px;
+  }
+
+  .brand-text h1 {
+    font-size: 0.92rem;
+  }
+
+  .brand-text p {
+    font-size: 0.65rem;
+  }
+
+  .main-wrapper,
+  #view-facturacion {
+    padding: 0 0.55rem;
+  }
+
+  .card-section,
+  .service-mode-section {
+    padding: 0.8rem;
+  }
+
+  .top-tab {
+    padding: 0.65rem 0.7rem;
+    font-size: 0.74rem;
+  }
+
+  .items-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-export-pdf,
+  .btn-service-mode {
+    min-height: 46px;
+  }
+
+  .service-mode-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.15rem;
+  }
+}
+
