@@ -1351,6 +1351,8 @@
           <input type="password" id="modal-input-pass" class="form-input" placeholder="Ingrese su contraseña..." value="" required oninput="document.getElementById('input-login-pass').value = this.value">
         </div>
 
+        <p id="modal-login-error-msg" role="alert" style="display: none; margin: -0.5rem 0 1rem; color: var(--danger); font-size: 0.82rem;"></p>
+
         <button type="submit" class="btn-export-pdf" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
           <i class="fa-solid fa-unlock"></i> Desbloquear Módulo
         </button>
@@ -1402,7 +1404,7 @@
 
   <!-- Application Scripts -->
   <script src="inventory-data.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=login-fix-1"></script>
 
 </body>
 </html>
