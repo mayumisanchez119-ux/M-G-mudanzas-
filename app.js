@@ -85,10 +85,8 @@ let state = {
   // MÓDULO DE FACTURACIÓN OFICIAL (PROTEGIDO POR CREDENCIALES)
   // -------------------------------------------------------------
   invoiceAuth: {
-    // GitHub Pages no puede proteger credenciales ni datos administrativos.
-    // La facturación queda explícitamente disponible solo en este navegador.
-    isAuthenticated: true,
-    currentUser: 'Dispositivo local'
+    isAuthenticated: false,
+    currentUser: ''
   },
   invoiceData: {
     number: 'FAC-2026-001',
@@ -721,6 +719,197 @@ function closeSyncModal() {
   if (modal) modal.classList.remove('active');
 }
 
+// Cotizador público compartido; facturación privada bajo una cuenta administrativa.
+const PUBLIC_SYNC_ID = 'shared';
+const INVOICE_ADMIN_EMAIL = 'facturacion@mgmudanzas.local';
+const INVOICE_SESSION_KEY = 'mg_invoice_session';
+let invoiceSession = readStoredJSON(INVOICE_SESSION_KEY, null);
+let publicSyncBusy = false;
+
+async function publicSyncRequest(path, options = {}) {
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    ...options,
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json', ...options.headers }
+  });
+  if (!response.ok) throw new Error(`Sincronización pública no disponible (HTTP ${response.status}).`);
+  return response;
+}
+
+function applyPublicQuoteData(data) {
+  if (Array.isArray(data?.savedQuotes)) {
+    state.savedQuotes = data.savedQuotes;
+    localStorage.setItem('mg_quotes_history', JSON.stringify(state.savedQuotes));
+    updateHistoryBadge();
+    if (state.activeMainTab === 'historial') renderHistoryTable();
+    else if (state.activeMainTab === 'aceptadas') renderAcceptedMovesView();
+    else if (state.activeMainTab === 'estadisticas') renderStatisticsDashboard();
+  }
+}
+
+async function syncFetchFromCloud(showToast = false) {
+  if (publicSyncBusy) return;
+  publicSyncBusy = true;
+  updateSyncUI('syncing');
+  try {
+    const response = await publicSyncRequest(`/rest/v1/mg_public_sync_state?select=data&id=eq.${PUBLIC_SYNC_ID}`);
+    const rows = await response.json();
+    if (rows[0]?.data) applyPublicQuoteData(rows[0].data);
+    else await publicSyncRequest('/rest/v1/mg_public_sync_state?on_conflict=id', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ id: PUBLIC_SYNC_ID, data: { savedQuotes: state.savedQuotes || [] } })
+    });
+    lastSyncTimestamp = new Date();
+    updateSyncUI('synced');
+    if (showToast) alert('✅ Cotizador compartido sincronizado.');
+  } catch (error) {
+    console.warn('Error de sincronización pública:', error);
+    updateSyncUI('offline');
+  } finally {
+    publicSyncBusy = false;
+  }
+}
+
+async function syncPublicQuotes() {
+  if (publicSyncBusy) return;
+  publicSyncBusy = true;
+  updateSyncUI('syncing');
+  try {
+    await publicSyncRequest('/rest/v1/mg_public_sync_state?on_conflict=id', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ id: PUBLIC_SYNC_ID, data: { savedQuotes: state.savedQuotes || [] } })
+    });
+    lastSyncTimestamp = new Date();
+    updateSyncUI('synced');
+  } catch (error) {
+    console.warn('Error guardando cotizador público:', error);
+    updateSyncUI('offline');
+  } finally {
+    publicSyncBusy = false;
+  }
+}
+
+async function activeInvoiceSession() {
+  if (!invoiceSession?.access_token || !invoiceSession?.user?.id) return null;
+  const expires = Number(invoiceSession.expires_at || 0) * 1000;
+  if (!expires || expires > Date.now() + 60000) return invoiceSession;
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST', headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: invoiceSession.refresh_token })
+  });
+  if (!response.ok) return null;
+  invoiceSession = await response.json();
+  localStorage.setItem(INVOICE_SESSION_KEY, JSON.stringify(invoiceSession));
+  return invoiceSession;
+}
+
+async function invoiceRequest(path, options = {}) {
+  const session = await activeInvoiceSession();
+  if (!session) throw new Error('La sesión de facturación venció.');
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    ...options,
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session.access_token}`, Accept: 'application/json', ...options.headers }
+  });
+  if (!response.ok) throw new Error(`Facturación no disponible (HTTP ${response.status}).`);
+  return response;
+}
+
+async function syncInvoicesFromCloud() {
+  const session = await activeInvoiceSession();
+  if (!session) return;
+  const response = await invoiceRequest(`/rest/v1/mg_invoice_state?select=data&user_id=eq.${encodeURIComponent(session.user.id)}`);
+  const rows = await response.json();
+  if (rows[0]?.data?.savedInvoices) {
+    state.savedInvoices = rows[0].data.savedInvoices;
+    localStorage.setItem('mg_invoices_history', JSON.stringify(state.savedInvoices));
+  } else await syncInvoicesToCloud();
+  updateInvoiceBadge();
+  renderInvoicesHistoryTable();
+}
+
+async function syncInvoicesToCloud() {
+  const session = await activeInvoiceSession();
+  if (!session) return;
+  await invoiceRequest('/rest/v1/mg_invoice_state?on_conflict=user_id', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ user_id: session.user.id, data: { savedInvoices: state.savedInvoices || [] } })
+  });
+}
+
+async function syncPushToCloud() {
+  await syncPublicQuotes();
+  if (state.invoiceAuth.isAuthenticated) {
+    try { await syncInvoicesToCloud(); } catch (error) { console.warn('Error guardando facturas:', error); }
+  }
+}
+
+async function signInInvoiceAdmin(event) {
+  event.preventDefault();
+  const username = document.getElementById('input-login-user')?.value.trim().toLowerCase();
+  const password = document.getElementById('input-login-pass')?.value;
+  const error = document.getElementById('login-error-msg');
+  const email = username === 'facturacion' ? INVOICE_ADMIN_EMAIL : username;
+  if (error) error.style.display = 'none';
+  try {
+    if (email !== INVOICE_ADMIN_EMAIL) throw new Error('Usuario de facturación no autorizado.');
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST', headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error('Usuario o contraseña incorrectos.');
+    invoiceSession = result;
+    localStorage.setItem(INVOICE_SESSION_KEY, JSON.stringify(invoiceSession));
+    state.invoiceAuth.isAuthenticated = true;
+    state.invoiceAuth.currentUser = 'facturacion';
+    await syncInvoicesFromCloud();
+    switchToInvoiceMode();
+  } catch (err) {
+    if (error) { error.innerText = err.message; error.style.display = 'block'; }
+  }
+}
+
+function updateSyncUI(status) {
+  const dot = document.getElementById('sync-indicator-dot');
+  const label = document.getElementById('sync-status-label');
+  const icon = document.getElementById('sync-icon-spin');
+  const modalStatus = document.getElementById('modal-sync-server-status');
+  if (dot) dot.className = status === 'syncing' ? 'sync-indicator-dot syncing' : status === 'offline' ? 'sync-indicator-dot offline' : 'sync-indicator-dot';
+  if (label) label.innerText = status === 'syncing' ? 'Sincronizando...' : status === 'offline' ? 'Sin conexión' : 'Compartido';
+  if (icon) icon.classList.toggle('syncing-spin', status === 'syncing');
+  if (modalStatus) modalStatus.innerHTML = status === 'offline' ? '<i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> Sin conexión' : '<i class="fa-solid fa-users" style="color: var(--success);"></i> Cotizador público compartido';
+}
+
+function initCloudSync() {
+  updateSyncUI('synced');
+  syncFetchFromCloud();
+  window.addEventListener('focus', () => {
+    if (Date.now() - lastFocusSync > 90000) { lastFocusSync = Date.now(); syncFetchFromCloud(); }
+  });
+  window.addEventListener('online', () => syncFetchFromCloud());
+}
+
+function manualCloudSync(showToast = true) { syncFetchFromCloud(showToast); }
+
+function openSyncModal() {
+  const modal = document.getElementById('modal-cloud-sync');
+  if (modal) modal.classList.add('active');
+}
+
+function openLoginModal() {
+  if (state.invoiceAuth.isAuthenticated) return switchToInvoiceMode();
+  const modal = document.getElementById('modal-invoice-login');
+  if (modal) modal.classList.add('active');
+  document.getElementById('modal-input-user')?.focus();
+}
+
+function logoutInvoiceAdmin() {
+  invoiceSession = null;
+  localStorage.removeItem(INVOICE_SESSION_KEY);
+  state.invoiceAuth.isAuthenticated = false;
+  state.invoiceAuth.currentUser = '';
+  switchMainTab('cotizador');
+}
+
 // Selector de Pestañas Principales (Cotizador, Historial, Aceptadas, Estadísticas)
 function switchMainTab(tabKey) {
   state.activeMainTab = tabKey;
@@ -777,9 +966,14 @@ function switchMainTab(tabKey) {
   }
 }
 
-// Abrir el módulo local de facturación. Un sitio estático no debe simular login.
 function openLoginModal() {
-  switchToInvoiceMode();
+  if (state.invoiceAuth.isAuthenticated) {
+    switchToInvoiceMode();
+    return;
+  }
+  const modal = document.getElementById('modal-invoice-login');
+  if (modal) modal.classList.add('active');
+  document.getElementById('modal-input-user')?.focus();
 }
 
 function closeLoginModal() {
@@ -894,7 +1088,10 @@ function switchToInvoiceMode() {
 }
 
 function logoutInvoiceAdmin() {
-  state.invoiceAuth.isAuthenticated = true;
+  invoiceSession = null;
+  localStorage.removeItem(INVOICE_SESSION_KEY);
+  state.invoiceAuth.isAuthenticated = false;
+  state.invoiceAuth.currentUser = '';
 
   // 1. Ocultar facturación
   const factView = document.getElementById('view-facturacion');
@@ -2856,7 +3053,15 @@ function truncateText(str, maxLength = 25) {
 // ==========================================================================
 
 function initInvoiceModule() {
-  state.invoiceAuth.isAuthenticated = true;
+  const storedInvoiceSession = readStoredJSON(INVOICE_SESSION_KEY, null);
+  if (storedInvoiceSession?.user?.email === INVOICE_ADMIN_EMAIL) {
+    invoiceSession = storedInvoiceSession;
+    state.invoiceAuth.isAuthenticated = true;
+    state.invoiceAuth.currentUser = 'facturacion';
+    syncInvoicesFromCloud().catch(error => console.warn('No se pudieron cargar las facturas:', error));
+  }
+
+  document.getElementById('form-invoice-login')?.addEventListener('submit', signInInvoiceAdmin);
 
   // Escuchadores de IVA e IRPF
   const checkIva = document.getElementById('check-invoice-iva');
