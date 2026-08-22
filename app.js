@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCalculations();
     updateHistoryBadge();
     initInvoiceModule();
-    initLocalStorageStatus();
+    initCloudSync();
 
     // La aplicación comienza en el cotizador; la facturación local está disponible.
     const publicNav = document.getElementById('public-top-nav-bar');
@@ -230,7 +230,7 @@ let isSyncing = false;
 let lastSyncTimestamp = null;
 let syncPollingInterval = null;
 
-async function syncFetchFromCloud(showToast = false) {
+async function legacySyncFetchFromCloud(showToast = false) {
   updateLocalStorageUI();
   if (showToast) alert('Los datos se guardan solo en este navegador. No se han enviado a la nube.');
   return;
@@ -321,7 +321,7 @@ async function syncFetchFromCloud(showToast = false) {
   }
 }
 
-async function syncPushToCloud() {
+async function legacySyncPushToCloud() {
   updateLocalStorageUI();
   return;
 
@@ -356,7 +356,7 @@ async function syncPushToCloud() {
   }
 }
 
-function updateSyncUI(status) {
+function legacyUpdateSyncUI(status) {
   const dot = document.getElementById('sync-indicator-dot');
   const label = document.getElementById('sync-status-label');
   const icon = document.getElementById('sync-icon-spin');
@@ -413,12 +413,12 @@ function initLocalStorageStatus() {
   });
 }
 
-function manualCloudSync(showToast = true) {
+function legacyManualCloudSync(showToast = true) {
   updateLocalStorageUI();
   if (showToast) alert('Los datos se guardan solo en este navegador. No se han enviado a la nube.');
 }
 
-function openSyncModal() {
+function legacyOpenSyncModal() {
   const modal = document.getElementById('modal-cloud-sync');
   if (modal) {
     updateLocalStorageUI();
@@ -426,12 +426,12 @@ function openSyncModal() {
   }
 }
 
-function closeSyncModal() {
+function legacyCloseSyncModal() {
   const modal = document.getElementById('modal-cloud-sync');
   if (modal) modal.classList.remove('active');
 }
 
-function updateLocalStorageUI() {
+function legacyUpdateLocalStorageUI() {
   const dot = document.getElementById('sync-indicator-dot');
   const label = document.getElementById('sync-status-label');
   const icon = document.getElementById('sync-icon-spin');
@@ -447,6 +447,278 @@ function updateLocalStorageUI() {
   if (modalTime) modalTime.innerText = 'No se envía información a Internet';
   if (modalQuotes) modalQuotes.innerText = `${(state.savedQuotes || []).length} presupuestos`;
   if (modalInvoices) modalInvoices.innerText = `${(state.savedInvoices || []).length} facturas`;
+}
+
+// La clave publishable es segura para una web pública cuando RLS protege las filas.
+// Nunca incluir claves secret/service_role en este archivo.
+const SUPABASE_URL = 'https://qmwesldfwapsukyjffzb.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2fUFLKaUv3taBzaM8lq7kg_hLktUtil';
+const SYNC_SESSION_KEY = 'mg_sync_session';
+let syncSession = readStoredJSON(SYNC_SESSION_KEY, null);
+let legacyIsSyncing = false;
+let legacyLastSyncTimestamp = null;
+let lastFocusSync = 0;
+
+function readStoredJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function isSyncSignedIn() {
+  return Boolean(syncSession?.access_token && syncSession?.user?.id);
+}
+
+function saveSyncSession(session) {
+  syncSession = session || null;
+  if (syncSession) localStorage.setItem(SYNC_SESSION_KEY, JSON.stringify(syncSession));
+  else localStorage.removeItem(SYNC_SESSION_KEY);
+}
+
+async function activeSyncSession() {
+  if (!isSyncSignedIn()) return null;
+  const expiresAt = Number(syncSession.expires_at || 0) * 1000;
+  if (!expiresAt || expiresAt > Date.now() + 60000) return syncSession;
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: syncSession.refresh_token })
+  });
+  if (!response.ok) {
+    saveSyncSession(null);
+    return null;
+  }
+  saveSyncSession(await response.json());
+  return syncSession;
+}
+
+async function syncRequest(path, options = {}) {
+  const session = await activeSyncSession();
+  if (!session) throw new Error('Inicie sesión para sincronizar sus datos.');
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${session.access_token}`,
+      Accept: 'application/json',
+      ...options.headers
+    }
+  });
+  if (response.status === 401) {
+    saveSyncSession(null);
+    throw new Error('La sesión venció. Inicie sesión nuevamente.');
+  }
+  if (!response.ok) throw new Error(`No fue posible sincronizar (HTTP ${response.status}).`);
+  return response;
+}
+
+function localSyncData() {
+  return { savedQuotes: state.savedQuotes || [], savedInvoices: state.savedInvoices || [] };
+}
+
+function applySyncData(data) {
+  state.savedQuotes = Array.isArray(data?.savedQuotes) ? data.savedQuotes : [];
+  state.savedInvoices = Array.isArray(data?.savedInvoices) ? data.savedInvoices : [];
+  localStorage.setItem('mg_quotes_history', JSON.stringify(state.savedQuotes));
+  localStorage.setItem('mg_invoices_history', JSON.stringify(state.savedInvoices));
+  updateHistoryBadge();
+  updateInvoiceBadge();
+  if (state.activeMainTab === 'historial') renderHistoryTable();
+  else if (state.activeMainTab === 'aceptadas') renderAcceptedMovesView();
+  else if (state.activeMainTab === 'estadisticas') renderStatisticsDashboard();
+  renderInvoicesHistoryTable();
+}
+
+async function fetchRemoteSyncData() {
+  const session = await activeSyncSession();
+  if (!session) return null;
+  const response = await syncRequest(`/rest/v1/mg_sync_state?select=data&user_id=eq.${encodeURIComponent(session.user.id)}`);
+  const rows = await response.json();
+  return rows[0]?.data || null;
+}
+
+async function saveRemoteSyncData(data) {
+  const session = await activeSyncSession();
+  if (!session) return;
+  await syncRequest('/rest/v1/mg_sync_state?on_conflict=user_id', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ user_id: session.user.id, data })
+  });
+}
+
+async function syncFetchFromCloud(showToast = false) {
+  if (!isSyncSignedIn()) {
+    updateSyncUI('local');
+    return;
+  }
+  if (isSyncing) return;
+  isSyncing = true;
+  updateSyncUI('syncing');
+  try {
+    const remote = await fetchRemoteSyncData();
+    if (remote) applySyncData(remote);
+    else await saveRemoteSyncData(localSyncData());
+    lastSyncTimestamp = new Date();
+    updateSyncUI('synced');
+    if (showToast) alert(`✅ Datos sincronizados.\n${state.savedQuotes.length} presupuestos y ${state.savedInvoices.length} facturas disponibles.`);
+  } catch (error) {
+    console.warn('Error de sincronización:', error);
+    updateSyncUI(isSyncSignedIn() ? 'offline' : 'local');
+    if (showToast) alert(error.message || 'No fue posible sincronizar los datos.');
+  } finally {
+    isSyncing = false;
+  }
+}
+
+async function syncPushToCloud() {
+  if (!isSyncSignedIn() || isSyncing) return;
+  isSyncing = true;
+  updateSyncUI('syncing');
+  try {
+    await saveRemoteSyncData(localSyncData());
+    lastSyncTimestamp = new Date();
+    updateSyncUI('synced');
+  } catch (error) {
+    console.warn('Error al guardar cambios sincronizados:', error);
+    updateSyncUI(isSyncSignedIn() ? 'offline' : 'local');
+  } finally {
+    isSyncing = false;
+  }
+}
+
+function updateSyncAuthModal() {
+  const signedIn = isSyncSignedIn();
+  const form = document.getElementById('sync-auth-form');
+  const actions = document.getElementById('sync-authenticated-actions');
+  const user = document.getElementById('sync-authenticated-user');
+  const description = document.getElementById('sync-auth-description');
+  if (form) form.style.display = signedIn ? 'none' : 'grid';
+  if (actions) actions.style.display = signedIn ? 'grid' : 'none';
+  if (user) user.innerText = signedIn ? `Sesión iniciada como ${syncSession.user.email || 'usuario sincronizado'}.` : '';
+  if (description && signedIn) description.innerText = 'Sus datos se guardan en una cuenta privada. Use este mismo correo y contraseña en los demás computadores.';
+}
+
+function updateSyncUI(status) {
+  const dot = document.getElementById('sync-indicator-dot');
+  const label = document.getElementById('sync-status-label');
+  const icon = document.getElementById('sync-icon-spin');
+  const modalStatus = document.getElementById('modal-sync-server-status');
+  const modalTime = document.getElementById('modal-sync-last-time');
+  const modalQuotes = document.getElementById('modal-sync-quotes-count');
+  const modalInvoices = document.getElementById('modal-sync-invoices-count');
+  if (status === 'syncing') {
+    if (dot) dot.className = 'sync-indicator-dot syncing';
+    if (label) label.innerText = 'Sincronizando...';
+    if (icon) icon.classList.add('syncing-spin');
+    if (modalStatus) modalStatus.innerHTML = '<i class="fa-solid fa-arrows-rotate" style="color: var(--primary);"></i> Sincronizando';
+  } else if (status === 'synced') {
+    if (dot) dot.className = 'sync-indicator-dot';
+    if (label) label.innerText = 'Sincronizado';
+    if (icon) icon.classList.remove('syncing-spin');
+    if (modalStatus) modalStatus.innerHTML = '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Datos privados sincronizados';
+  } else {
+    if (dot) dot.className = 'sync-indicator-dot offline';
+    if (label) label.innerText = status === 'offline' ? 'Sin conexión' : 'Inicia sesión';
+    if (icon) icon.classList.remove('syncing-spin');
+    if (modalStatus) modalStatus.innerHTML = `<i class="fa-solid ${status === 'offline' ? 'fa-triangle-exclamation' : 'fa-lock'}" style="color: var(--primary);"></i> ${status === 'offline' ? 'Cambios guardados en este dispositivo' : 'Datos locales hasta iniciar sesión'}`;
+  }
+  if (modalTime) modalTime.innerText = lastSyncTimestamp ? lastSyncTimestamp.toLocaleTimeString('es-ES') : 'Aún no sincronizado';
+  if (modalQuotes) modalQuotes.innerText = `${(state.savedQuotes || []).length} presupuestos`;
+  if (modalInvoices) modalInvoices.innerText = `${(state.savedInvoices || []).length} facturas`;
+  updateSyncAuthModal();
+}
+
+function setSyncAuthError(message = '') {
+  const error = document.getElementById('sync-auth-error');
+  if (error) {
+    error.innerText = message;
+    error.style.display = message ? 'block' : 'none';
+  }
+}
+
+async function signInForSync(event) {
+  event.preventDefault();
+  const email = document.getElementById('sync-auth-email')?.value.trim();
+  const password = document.getElementById('sync-auth-password')?.value;
+  if (!email || !password) return;
+  setSyncAuthError();
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error_description || 'No fue posible iniciar sesión.');
+    saveSyncSession(result);
+    await syncFetchFromCloud(true);
+  } catch (error) {
+    setSyncAuthError(error.message || 'No fue posible iniciar sesión.');
+  }
+}
+
+async function signUpForSync() {
+  const email = document.getElementById('sync-auth-email')?.value.trim();
+  const password = document.getElementById('sync-auth-password')?.value;
+  if (!email || !password) return setSyncAuthError('Escriba un correo y una contraseña para crear la cuenta.');
+  setSyncAuthError();
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.msg || result.message || 'No fue posible crear la cuenta.');
+    if (result.session) {
+      saveSyncSession(result.session);
+      await syncFetchFromCloud(true);
+    } else setSyncAuthError('Revise su correo y confirme la cuenta antes de iniciar sesión.');
+  } catch (error) {
+    setSyncAuthError(error.message || 'No fue posible crear la cuenta.');
+  }
+}
+
+async function signOutFromSync() {
+  try {
+    if (isSyncSignedIn()) await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: 'POST', headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${syncSession.access_token}` } });
+  } finally {
+    saveSyncSession(null);
+    updateSyncUI('local');
+  }
+}
+
+function initCloudSync() {
+  updateSyncUI(isSyncSignedIn() ? 'synced' : 'local');
+  if (isSyncSignedIn()) syncFetchFromCloud();
+  window.addEventListener('focus', () => {
+    if (isSyncSignedIn() && Date.now() - lastFocusSync > 90000) {
+      lastFocusSync = Date.now();
+      syncFetchFromCloud();
+    }
+  });
+  window.addEventListener('online', () => isSyncSignedIn() && syncFetchFromCloud());
+}
+
+function manualCloudSync(showToast = true) {
+  syncFetchFromCloud(showToast);
+}
+
+function openSyncModal() {
+  const modal = document.getElementById('modal-cloud-sync');
+  if (modal) {
+    updateSyncUI(isSyncSignedIn() ? 'synced' : 'local');
+    modal.classList.add('active');
+  }
+}
+
+function closeSyncModal() {
+  const modal = document.getElementById('modal-cloud-sync');
+  if (modal) modal.classList.remove('active');
 }
 
 // Selector de Pestañas Principales (Cotizador, Historial, Aceptadas, Estadísticas)
