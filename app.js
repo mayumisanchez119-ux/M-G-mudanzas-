@@ -786,7 +786,7 @@ async function getDrivingRoute(originCoords, destCoords) {
 
     return {
       distanceKm: Number((route.distance / 1000).toFixed(1)),
-      coordinates: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]
+      coordinates: route.geometry.coordinates.map(([lng, lat]) => [lat, lng])
     };
   } catch (error) {
     console.warn('No se pudo obtener la ruta por carretera:', error);
