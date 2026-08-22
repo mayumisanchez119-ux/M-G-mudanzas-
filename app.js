@@ -846,9 +846,12 @@ async function signInInvoiceAdmin(event) {
   event.preventDefault();
   const username = document.getElementById('input-login-user')?.value.trim().toLowerCase();
   const password = document.getElementById('input-login-pass')?.value;
-  const error = document.getElementById('login-error-msg');
+  const errors = [
+    document.getElementById('login-error-msg'),
+    document.getElementById('modal-login-error-msg')
+  ].filter(Boolean);
   const email = username === 'facturacion' ? INVOICE_ADMIN_EMAIL : username;
-  if (error) error.style.display = 'none';
+  errors.forEach(error => { error.innerText = ''; error.style.display = 'none'; });
   try {
     if (email !== INVOICE_ADMIN_EMAIL) throw new Error('Usuario de facturación no autorizado.');
     const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -862,9 +865,10 @@ async function signInInvoiceAdmin(event) {
     state.invoiceAuth.isAuthenticated = true;
     state.invoiceAuth.currentUser = 'facturacion';
     await syncInvoicesFromCloud();
+    closeLoginModal();
     switchToInvoiceMode();
   } catch (err) {
-    if (error) { error.innerText = err.message; error.style.display = 'block'; }
+    errors.forEach(error => { error.innerText = err.message; error.style.display = 'block'; });
   }
 }
 
