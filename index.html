@@ -61,10 +61,10 @@
         </div>
       </a>
       <div class="header-actions">
-        <!-- Estado de almacenamiento: no se transmiten datos sin un backend seguro -->
-        <button type="button" class="btn-cloud-sync" id="btn-cloud-sync" onclick="openSyncModal()" title="Los datos se guardan únicamente en este navegador">
+        <!-- Estado de sincronización segura entre dispositivos -->
+        <button type="button" class="btn-cloud-sync" id="btn-cloud-sync" onclick="openSyncModal()" title="Inicie sesión para sincronizar sus datos entre dispositivos">
           <span class="sync-indicator-dot" id="sync-indicator-dot"></span>
-          <span class="sync-text" id="sync-status-label">Guardado local</span>
+          <span class="sync-text" id="sync-status-label">Inicia sesión</span>
           <i class="fa-solid fa-arrows-rotate sync-icon-spin" id="sync-icon-spin"></i>
         </button>
 
@@ -1358,7 +1358,7 @@
     </div>
   </div>
 
-  <!-- Modal informativo de almacenamiento local -->
+  <!-- Modal de sincronización privada entre dispositivos -->
   <div class="modal-overlay" id="modal-cloud-sync">
     <div class="modal-box" style="max-width: 450px; padding: 2rem; border-top: 5px solid var(--success);">
       <div class="modal-header">
@@ -1366,37 +1366,55 @@
           <div style="width: 38px; height: 38px; background: #D1FAE5; color: #065F46; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
             <i class="fa-solid fa-cloud-arrow-up"></i>
           </div>
-          <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0;">Almacenamiento local</h3>
+          <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0;">Sincronizar mis datos</h3>
         </div>
         <button type="button" class="btn-close-modal" onclick="closeSyncModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.4;">
-        Los presupuestos y facturas se guardan únicamente en este navegador. No se transmiten datos de clientes a servicios externos.
+      <p id="sync-auth-description" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.4;">
+        Inicie sesión con la misma cuenta en cada computador. Sus presupuestos y facturas se guardarán en una cuenta privada y protegida.
       </p>
 
       <div style="background: #F8FAFC; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
-          <span style="color: var(--text-muted);">Modo:</span>
-          <strong style="color: var(--primary);" id="modal-sync-server-status"><i class="fa-solid fa-laptop"></i> Solo este dispositivo</strong>
+          <span style="color: var(--text-muted);">Estado:</span>
+          <strong style="color: var(--primary);" id="modal-sync-server-status"><i class="fa-solid fa-lock"></i> Inicie sesión</strong>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
-          <span style="color: var(--text-muted);">Privacidad:</span>
-          <strong style="color: var(--dark);" id="modal-sync-last-time">No se envía información a Internet</strong>
+          <span style="color: var(--text-muted);">Última sincronización:</span>
+          <strong style="color: var(--dark);" id="modal-sync-last-time">Aún no sincronizado</strong>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
-          <span style="color: var(--text-muted);">Presupuestos locales:</span>
+          <span style="color: var(--text-muted);">Presupuestos:</span>
           <strong style="color: var(--primary);" id="modal-sync-quotes-count">0 presupuestos</strong>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.84rem;">
-          <span style="color: var(--text-muted);">Facturas locales:</span>
+          <span style="color: var(--text-muted);">Facturas:</span>
           <strong style="color: var(--primary);" id="modal-sync-invoices-count">0 facturas</strong>
         </div>
       </div>
 
-      <button type="button" class="btn-export-pdf" onclick="closeSyncModal()" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
-        <i class="fa-solid fa-check"></i> Entendido
-      </button>
+      <form id="sync-auth-form" onsubmit="signInForSync(event)" style="display: grid; gap: 0.75rem;">
+        <input id="sync-auth-email" class="form-input" type="email" autocomplete="email" placeholder="Correo electrónico" required>
+        <input id="sync-auth-password" class="form-input" type="password" autocomplete="current-password" placeholder="Contraseña" required>
+        <p id="sync-auth-error" role="alert" style="display: none; margin: 0; color: var(--danger); font-size: 0.8rem;"></p>
+        <button type="submit" class="btn-export-pdf" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
+          <i class="fa-solid fa-right-to-bracket"></i> Entrar y sincronizar
+        </button>
+        <button type="button" class="btn-action-sm" onclick="signUpForSync()" style="width: 100%; justify-content: center; padding: 0.65rem;">
+          Crear cuenta segura
+        </button>
+      </form>
+
+      <div id="sync-authenticated-actions" style="display: none; gap: 0.7rem;">
+        <p id="sync-authenticated-user" style="margin: 0 0 0.5rem; color: var(--text-muted); font-size: 0.82rem;"></p>
+        <button type="button" class="btn-export-pdf" onclick="manualCloudSync(true)" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
+          <i class="fa-solid fa-arrows-rotate"></i> Sincronizar ahora
+        </button>
+        <button type="button" class="btn-action-sm" onclick="signOutFromSync()" style="width: 100%; justify-content: center; padding: 0.65rem;">
+          Cerrar sesión en este dispositivo
+        </button>
+      </div>
     </div>
   </div>
 
