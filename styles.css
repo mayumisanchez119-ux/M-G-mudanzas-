@@ -251,7 +251,7 @@ body {
   color: var(--primary);
 }
 
-/* Botón e Indicador de Sincronización en la Nube */
+/* Botón e indicador de almacenamiento local */
 .btn-cloud-sync {
   background: rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(8px);
@@ -346,6 +346,14 @@ body {
   color: white;
   border-bottom-color: var(--accent);
   background: rgba(255, 255, 255, 0.15);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #FBBF24;
+  outline-offset: 3px;
 }
 
 .top-tab-badge {
