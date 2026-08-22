@@ -85,8 +85,10 @@ let state = {
   // MÓDULO DE FACTURACIÓN OFICIAL (PROTEGIDO POR CREDENCIALES)
   // -------------------------------------------------------------
   invoiceAuth: {
-    isAuthenticated: false,
-    currentUser: 'carlos'
+    // GitHub Pages no puede proteger credenciales ni datos administrativos.
+    // La facturación queda explícitamente disponible solo en este navegador.
+    isAuthenticated: true,
+    currentUser: 'Dispositivo local'
   },
   invoiceData: {
     number: 'FAC-2026-001',
@@ -101,76 +103,8 @@ let state = {
     irpfPct: 1,
     items: []
   },
-  savedInvoices: JSON.parse(localStorage.getItem('mg_invoices_history') || 'null') || [
-    {
-      id: 'FAC-2026-001',
-      date: '2026-07-28',
-      dueDate: '2026-08-28',
-      clientName: 'Logística & Distribución Madrid S.L.',
-      clientNif: 'B-84920193',
-      clientAddress: 'Polígono Industrial Las Arenas, Pinto, Madrid',
-      hasIva: true,
-      ivaPct: 21,
-      hasIrpf: false,
-      irpfPct: 15,
-      subtotal: 2520.00,
-      ivaAmount: 529.20,
-      irpfAmount: 0.00,
-      grandTotal: 3049.20,
-      status: 'Cobrada',
-      items: [
-        { id: '1', description: '07-07 Ruta Toledo', qty: 1, unitPrice: 300 },
-        { id: '2', description: '08-07 Ruta localidad', qty: 1, unitPrice: 300 },
-        { id: '3', description: '09-07 Ruta localidad', qty: 1, unitPrice: 260 },
-        { id: '4', description: '10-07 Ruta localidad', qty: 1, unitPrice: 260 },
-        { id: '5', description: '13-07 Ruta localidad *', qty: 1, unitPrice: 260 },
-        { id: '6', description: '04-07 Ruta Toledo', qty: 1, unitPrice: 280 },
-        { id: '7', description: '15-07 Ruta localidad', qty: 1, unitPrice: 300 },
-        { id: '8', description: '16-07 Ruta localidad', qty: 1, unitPrice: 280 },
-        { id: '9', description: '17-07 Ruta localidad', qty: 1, unitPrice: 280 }
-      ]
-    },
-    {
-      id: 'FAC-2026-002',
-      date: '2026-08-02',
-      dueDate: '2026-09-02',
-      clientName: 'Mudanzas Integrales Centro S.A.',
-      clientNif: 'A-28940122',
-      clientAddress: 'Paseo de la Castellana 140, Madrid',
-      hasIva: true,
-      ivaPct: 21,
-      hasIrpf: true,
-      irpfPct: 15,
-      subtotal: 1850.00,
-      ivaAmount: 388.50,
-      irpfAmount: 277.50,
-      grandTotal: 1961.00,
-      status: 'Cobrada',
-      items: [
-        { id: '10', description: 'Servicio de Mudanza y Portes Gran Volumen', qty: 1, unitPrice: 1850 }
-      ]
-    },
-    {
-      id: 'FAC-2026-003',
-      date: '2026-08-06',
-      dueDate: '2026-09-06',
-      clientName: 'Construcciones & Reformas Toledo S.L.',
-      clientNif: 'B-45091283',
-      clientAddress: 'Av. Barber 22, Toledo',
-      hasIva: true,
-      ivaPct: 21,
-      hasIrpf: false,
-      irpfPct: 15,
-      subtotal: 1420.00,
-      ivaAmount: 298.20,
-      irpfAmount: 0.00,
-      grandTotal: 1718.20,
-      status: 'Pendiente de Cobro',
-      items: [
-        { id: '11', description: 'Porte y Transporte 2 Camiones 18m³ Toledo', qty: 2, unitPrice: 710 }
-      ]
-    }
-  ]
+  // Nunca incluir facturas de clientes en el JavaScript público.
+  savedInvoices: JSON.parse(localStorage.getItem('mg_invoices_history') || '[]')
 };
 
 let map = null;
@@ -180,6 +114,16 @@ let routeLine = null;
 
 let debounceTimerOrigin = null;
 let debounceTimerDest = null;
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[char]));
+}
+
+function safeId(value) {
+  return encodeURIComponent(String(value ?? '')).replace(/'/g, '%27');
+}
 
 // Base de datos integrada de Códigos Postales y Municipios de España
 const POSTAL_CODES_DB = [
@@ -241,10 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCalculations();
     updateHistoryBadge();
     initInvoiceModule();
-    initCloudSync();
+    initLocalStorageStatus();
 
-    // Asegurar que siempre inicie en modo público con las 4 pestañas originales
-    state.invoiceAuth.isAuthenticated = false;
+    // La aplicación comienza en el cotizador; la facturación local está disponible.
     const publicNav = document.getElementById('public-top-nav-bar');
     const invoiceNav = document.getElementById('invoice-top-nav-bar');
     const factView = document.getElementById('view-facturacion');
@@ -280,14 +223,18 @@ setTimeout(hidePreloader, 900);
 window.addEventListener('load', hidePreloader);
 
 // ==========================================================================
-// SISTEMA DE SINCRONIZACIÓN EN LA NUBE EN TIEMPO REAL (MULTI-DISPOSITIVO)
+// ALMACENAMIENTO LOCAL PRIVADO DEL DISPOSITIVO
 // ==========================================================================
-const CLOUD_SYNC_URL = 'https://jsonblob.com/api/jsonBlob/019ff169-538e-70ec-aa0e-f9ddbfc4fe66';
+const CLOUD_SYNC_URL = null; // Sin backend autenticado no se envían datos a la nube.
 let isSyncing = false;
 let lastSyncTimestamp = null;
 let syncPollingInterval = null;
 
 async function syncFetchFromCloud(showToast = false) {
+  updateLocalStorageUI();
+  if (showToast) alert('Los datos se guardan solo en este navegador. No se han enviado a la nube.');
+  return;
+
   if (isSyncing) return;
   isSyncing = true;
   updateSyncUI('syncing');
@@ -375,6 +322,9 @@ async function syncFetchFromCloud(showToast = false) {
 }
 
 async function syncPushToCloud() {
+  updateLocalStorageUI();
+  return;
+
   updateSyncUI('syncing');
 
   try {
@@ -438,7 +388,10 @@ function updateSyncUI(status) {
   if (modalInvoices) modalInvoices.innerText = `${(state.savedInvoices || []).length} facturas`;
 }
 
-function initCloudSync() {
+function initLocalStorageStatus() {
+  updateLocalStorageUI();
+  return;
+
   // Sincronización inicial al abrir
   syncFetchFromCloud();
 
@@ -461,13 +414,14 @@ function initCloudSync() {
 }
 
 function manualCloudSync(showToast = true) {
-  syncFetchFromCloud(showToast);
+  updateLocalStorageUI();
+  if (showToast) alert('Los datos se guardan solo en este navegador. No se han enviado a la nube.');
 }
 
 function openSyncModal() {
   const modal = document.getElementById('modal-cloud-sync');
   if (modal) {
-    updateSyncUI(isSyncing ? 'syncing' : 'synced');
+    updateLocalStorageUI();
     modal.classList.add('active');
   }
 }
@@ -475,6 +429,24 @@ function openSyncModal() {
 function closeSyncModal() {
   const modal = document.getElementById('modal-cloud-sync');
   if (modal) modal.classList.remove('active');
+}
+
+function updateLocalStorageUI() {
+  const dot = document.getElementById('sync-indicator-dot');
+  const label = document.getElementById('sync-status-label');
+  const icon = document.getElementById('sync-icon-spin');
+  const modalStatus = document.getElementById('modal-sync-server-status');
+  const modalTime = document.getElementById('modal-sync-last-time');
+  const modalQuotes = document.getElementById('modal-sync-quotes-count');
+  const modalInvoices = document.getElementById('modal-sync-invoices-count');
+
+  if (dot) dot.className = 'sync-indicator-dot offline';
+  if (label) label.innerText = 'Guardado local';
+  if (icon) icon.classList.remove('syncing-spin');
+  if (modalStatus) modalStatus.innerHTML = '<i class="fa-solid fa-laptop" style="color: var(--primary);"></i> Solo este dispositivo';
+  if (modalTime) modalTime.innerText = 'No se envía información a Internet';
+  if (modalQuotes) modalQuotes.innerText = `${(state.savedQuotes || []).length} presupuestos`;
+  if (modalInvoices) modalInvoices.innerText = `${(state.savedInvoices || []).length} facturas`;
 }
 
 // Selector de Pestañas Principales (Cotizador, Historial, Aceptadas, Estadísticas)
@@ -533,17 +505,9 @@ function switchMainTab(tabKey) {
   }
 }
 
-// Abrir Modal de Inicio de Sesión de Facturación
+// Abrir el módulo local de facturación. Un sitio estático no debe simular login.
 function openLoginModal() {
-  if (state.invoiceAuth.isAuthenticated) {
-    switchToInvoiceMode();
-    return;
-  }
-  
-  const modal = document.getElementById('modal-invoice-login');
-  if (modal) modal.classList.add('active');
-  const userInput = document.getElementById('modal-input-user') || document.getElementById('input-login-user');
-  if (userInput) userInput.focus();
+  switchToInvoiceMode();
 }
 
 function closeLoginModal() {
@@ -658,9 +622,7 @@ function switchToInvoiceMode() {
 }
 
 function logoutInvoiceAdmin() {
-  state.invoiceAuth.isAuthenticated = false;
-  localStorage.removeItem('mg_invoice_auth');
-  sessionStorage.removeItem('mg_invoice_auth');
+  state.invoiceAuth.isAuthenticated = true;
 
   // 1. Ocultar facturación
   const factView = document.getElementById('view-facturacion');
@@ -808,6 +770,32 @@ async function geocodeAddress(queryStr) {
   return null;
 }
 
+async function getDrivingRoute(originCoords, destCoords) {
+  const [originLat, originLng] = originCoords;
+  const [destLat, destLng] = destCoords;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const route = (await response.json()).routes?.[0];
+    if (!route || !Array.isArray(route.geometry?.coordinates)) throw new Error('Ruta no disponible');
+
+    return {
+      distanceKm: Number((route.distance / 1000).toFixed(1)),
+      coordinates: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]
+    };
+  } catch (error) {
+    console.warn('No se pudo obtener la ruta por carretera:', error);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // Update Map markers, polyline route and calculate distance
 async function updateFullRouteFromInputs() {
   const originInput = document.getElementById('client-origin');
@@ -833,26 +821,29 @@ async function updateFullRouteFromInputs() {
   if (originGeo) {
     state.originCoords = [originGeo.lat, originGeo.lng];
     state.client.origin = originText;
-    originMarker?.setLatLng(state.originCoords).setPopupContent(`<b>Origen:</b> ${originGeo.name}`);
+    originMarker?.setLatLng(state.originCoords).setPopupContent(`<b>Origen:</b> ${escapeHTML(originGeo.name)}`);
     updated = true;
   }
 
   if (destGeo) {
     state.destCoords = [destGeo.lat, destGeo.lng];
     state.client.destination = destText;
-    destMarker?.setLatLng(state.destCoords).setPopupContent(`<b>Destino:</b> ${destGeo.name}`);
+    destMarker?.setLatLng(state.destCoords).setPopupContent(`<b>Destino:</b> ${escapeHTML(destGeo.name)}`);
     updated = true;
   }
 
   if (updated && map && routeLine) {
-    routeLine.setLatLngs([state.originCoords, state.destCoords]);
+    const roadRoute = await getDrivingRoute(state.originCoords, state.destCoords);
+    routeLine.setLatLngs(roadRoute?.coordinates || [state.originCoords, state.destCoords]);
     map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
 
-    const p1 = L.latLng(state.originCoords);
-    const p2 = L.latLng(state.destCoords);
-    const meters = p1.distanceTo(p2);
-    const roadKm = Math.max(1, (meters / 1000) * 1.3);
-    state.distanceKm = parseFloat(roadKm.toFixed(1));
+    if (roadRoute) {
+      state.distanceKm = roadRoute.distanceKm;
+    } else {
+      const p1 = L.latLng(state.originCoords);
+      const p2 = L.latLng(state.destCoords);
+      state.distanceKm = Math.max(1, Number(((p1.distanceTo(p2) / 1000) * 1.3).toFixed(1)));
+    }
 
     const distInput = document.getElementById('input-distance-km');
     if (distInput) distInput.value = state.distanceKm;
@@ -860,7 +851,8 @@ async function updateFullRouteFromInputs() {
     updateCalculations();
 
     if (statusEl) {
-      statusEl.innerHTML = `<span style="color: var(--success);"><i class="fa-solid fa-circle-check"></i> Ruta actualizada: ${state.distanceKm} km</span>`;
+      const label = roadRoute ? 'Ruta por carretera actualizada' : 'Distancia aproximada actualizada';
+      statusEl.innerHTML = `<span style="color: var(--success);"><i class="fa-solid fa-circle-check"></i> ${label}: ${state.distanceKm} km</span>`;
     }
   } else if (statusEl) {
     statusEl.innerHTML = '<span style="color: var(--warning);"><i class="fa-solid fa-circle-exclamation"></i> Ingrese ambas ubicaciones para calcular la ruta.</span>';
@@ -967,7 +959,7 @@ function renderDropdownItems(items, dropdownEl, onSelectCallback) {
   dropdownEl.innerHTML = items.map(item => `
     <div class="suggestion-item">
       <i class="fa-solid fa-location-dot"></i>
-      <span>${item.name}</span>
+      <span>${escapeHTML(item.name)}</span>
     </div>
   `).join('');
 
@@ -980,51 +972,6 @@ function renderDropdownItems(items, dropdownEl, onSelectCallback) {
       dropdownEl.classList.remove('active');
     });
   });
-}
-
-// Main Navigation Tab Switcher (4 Pestañas)
-function switchMainTab(tabName) {
-  state.activeMainTab = tabName;
-
-  const viewCotizador = document.getElementById('view-cotizador');
-  const viewHistorial = document.getElementById('view-historial');
-  const viewAceptadas = document.getElementById('view-aceptadas');
-  const viewEstadisticas = document.getElementById('view-estadisticas');
-
-  const tabBtnCotizador = document.getElementById('tab-btn-cotizador');
-  const tabBtnHistorial = document.getElementById('tab-btn-historial');
-  const tabBtnAceptadas = document.getElementById('tab-btn-aceptadas');
-  const tabBtnEstadisticas = document.getElementById('tab-btn-estadisticas');
-
-  viewCotizador.style.display = 'none';
-  viewHistorial.style.display = 'none';
-  viewAceptadas.style.display = 'none';
-  viewEstadisticas.style.display = 'none';
-
-  tabBtnCotizador.classList.remove('active');
-  tabBtnHistorial.classList.remove('active');
-  tabBtnAceptadas.classList.remove('active');
-  tabBtnEstadisticas.classList.remove('active');
-
-  if (tabName === 'cotizador') {
-    viewCotizador.style.display = 'grid';
-    tabBtnCotizador.classList.add('active');
-    if (map) {
-      setTimeout(() => map.invalidateSize(), 200);
-    }
-  } else if (tabName === 'historial') {
-    viewHistorial.style.display = 'grid';
-    tabBtnHistorial.classList.add('active');
-    renderHistoryTable();
-  } else if (tabName === 'aceptadas') {
-    viewAceptadas.style.display = 'grid';
-    tabBtnAceptadas.classList.add('active');
-    renderAcceptedMovesView();
-  } else if (tabName === 'estadisticas') {
-    viewEstadisticas.style.display = 'grid';
-    tabBtnEstadisticas.classList.add('active');
-    renderStatisticsDashboard();
-  }
 }
 
 // Event Listeners Setup
@@ -1521,10 +1468,10 @@ function renderItems() {
           <i class="fa-solid ${item.icon}"></i>
         </div>
         <div class="item-info">
-          <div class="item-name">${item.name}</div>
+          <div class="item-name">${escapeHTML(item.name)}</div>
           <div class="item-m3-row">
             <span class="item-m3"><i class="fa-solid fa-cube"></i> ${item.m3.toFixed(2)} m³/ud</span>
-            <button class="btn-edit-m3" onclick="openEditM3Modal('${item.roomId}', '${item.id}')" title="Editar m³ de este objeto">
+            <button type="button" class="btn-edit-m3" onclick="openEditM3Modal(decodeURIComponent('${safeId(item.roomId)}'), decodeURIComponent('${safeId(item.id)}'))" title="Editar m³ de este objeto">
               <i class="fa-solid fa-pen"></i>
             </button>
           </div>
@@ -1535,9 +1482,9 @@ function renderItems() {
           ${item.qty > 0 ? `Subtotal: ${(item.qty * item.m3).toFixed(2)} m³` : ''}
         </div>
         <div class="qty-controls">
-          <button class="btn-qty" onclick="changeQty('${item.roomId}', '${item.id}', -1)">-</button>
-          <input type="number" class="qty-input" value="${item.qty}" min="0" onchange="setQty('${item.roomId}', '${item.id}', this.value)">
-          <button class="btn-qty" onclick="changeQty('${item.roomId}', '${item.id}', 1)">+</button>
+          <button type="button" class="btn-qty" onclick="changeQty(decodeURIComponent('${safeId(item.roomId)}'), decodeURIComponent('${safeId(item.id)}'), -1)">-</button>
+          <input type="number" class="qty-input" value="${Number(item.qty) || 0}" min="0" onchange="setQty(decodeURIComponent('${safeId(item.roomId)}'), decodeURIComponent('${safeId(item.id)}'), this.value)">
+          <button type="button" class="btn-qty" onclick="changeQty(decodeURIComponent('${safeId(item.roomId)}'), decodeURIComponent('${safeId(item.id)}'), 1)">+</button>
         </div>
       </div>
     </div>
@@ -2014,12 +1961,13 @@ function renderHistoryTable() {
   for (let i = 0; i < filteredQuotes.length; i++) {
     const q = filteredQuotes[i];
     try {
-      const status = q.status || 'Pendiente';
+      const rawStatus = q.status || 'Pendiente';
+      const status = escapeHTML(rawStatus);
       let statusClass = 'pendiente';
-      if (status === 'Aceptado') statusClass = 'aceptado';
-      else if (status === 'Rechazado') statusClass = 'rechazado';
-      else if (status === 'En Proceso') statusClass = 'en_proceso';
-      else if (status === 'Completado' || status === 'Realizada') statusClass = 'completado';
+      if (rawStatus === 'Aceptado') statusClass = 'aceptado';
+      else if (rawStatus === 'Rechazado') statusClass = 'rechazado';
+      else if (rawStatus === 'En Proceso') statusClass = 'en_proceso';
+      else if (rawStatus === 'Completado' || rawStatus === 'Realizada') statusClass = 'completado';
 
       const isTransport = q.serviceMode === 'transporte';
       const modeBadge = isTransport 
@@ -2027,10 +1975,12 @@ function renderHistoryTable() {
         : '<span style="background: #EBF4FC; color: var(--primary); font-size: 0.72rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">MUDANZA</span>';
 
       const client = q.client || {};
-      const clientName = client.name || 'Cliente Particular';
-      const clientPhone = client.phone || '-';
-      const clientOrigin = client.origin || 'Madrid';
-      const clientDest = client.destination || 'España';
+      const quoteId = String(q.id || 'PRE-000');
+      const quoteIdArg = safeId(quoteId);
+      const clientName = escapeHTML(client.name || 'Cliente Particular');
+      const clientPhone = escapeHTML(client.phone || '-');
+      const clientOrigin = escapeHTML(client.origin || 'Madrid');
+      const clientDest = escapeHTML(client.destination || 'España');
 
       const totalM3 = Number(q.totalM3 || 0);
       const totalItems = q.totalItems || 0;
@@ -2038,17 +1988,17 @@ function renderHistoryTable() {
       const staffQty = q.staff || 1;
       const sugTotal = Number(q.suggestedTotal || q.finalPrice || 0);
       const finalTotal = Number(q.finalPrice || q.suggestedTotal || 0);
-      const formattedDate = q.formattedDate || (q.timestamp ? new Date(q.timestamp).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES'));
+      const formattedDate = escapeHTML(q.formattedDate || (q.timestamp ? new Date(q.timestamp).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES')));
 
       const logisticsDesc = isTransport
-        ? `<strong>${trucksQty} camión/es (18 m³)</strong><br><span style="font-size: 0.78rem; color: var(--text-muted);">${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Carga directa'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</span>`
-        : `<strong>${totalM3.toFixed(2)} m³</strong> (${totalItems} uds)<br><span style="font-size: 0.78rem; color: var(--text-muted);">${trucksQty} cam. (18m³) / ${staffQty} mozos</span>`;
+        ? `<strong>${Number(trucksQty) || 1} camión/es (18 m³)</strong><br><span style="font-size: 0.78rem; color: var(--text-muted);">${q.transportCargoUnits ? `${escapeHTML(q.transportCargoUnits)} bultos` : 'Carga directa'} ${q.transportCargoWeight ? `(${escapeHTML(q.transportCargoWeight)} kg)` : ''}</span>`
+        : `<strong>${totalM3.toFixed(2)} m³</strong> (${escapeHTML(totalItems)} uds)<br><span style="font-size: 0.78rem; color: var(--text-muted);">${Number(trucksQty) || 1} cam. (18m³) / ${Number(staffQty) || 1} mozos</span>`;
 
       rows.push(`
         <tr>
           <td>
             <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
-              <strong style="color: var(--primary);">${q.id || 'PRE-000'}</strong>
+              <strong style="color: var(--primary);">${escapeHTML(quoteId)}</strong>
               ${modeBadge}
             </div>
             <span style="font-size: 0.78rem; color: var(--text-muted);">${formattedDate}</span>
@@ -2071,18 +2021,18 @@ function renderHistoryTable() {
           </td>
           <td style="text-align: center;">
             <div style="display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap;">
-              ${status !== 'Aceptado' && status !== 'Completado' ? `
-                <button class="btn-status-accept" onclick="updateQuoteStatus('${q.id}', 'Aceptado')">
+              ${rawStatus !== 'Aceptado' && rawStatus !== 'Completado' ? `
+                <button type="button" class="btn-status-accept" onclick="updateQuoteStatus(decodeURIComponent('${quoteIdArg}'), 'Aceptado')">
                   <i class="fa-solid fa-check"></i> Aceptar
                 </button>
               ` : ''}
-              <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar PDF">
+              <button type="button" class="btn-action-sm" onclick="exportQuotePDFFromRecord(decodeURIComponent('${quoteIdArg}'))" title="Descargar PDF">
                 <i class="fa-solid fa-file-pdf"></i>
               </button>
-              <button class="btn-action-sm" onclick="loadQuoteIntoQuoter('${q.id}')" title="Cargar en Cotizador">
+              <button type="button" class="btn-action-sm" onclick="loadQuoteIntoQuoter(decodeURIComponent('${quoteIdArg}'))" title="Cargar en Cotizador">
                 <i class="fa-solid fa-folder-open"></i>
               </button>
-              <button class="btn-action-sm" onclick="deleteQuoteFromHistory('${q.id}')" title="Eliminar" style="color: var(--danger);">
+              <button type="button" class="btn-action-sm" onclick="deleteQuoteFromHistory(decodeURIComponent('${quoteIdArg}'))" title="Eliminar" style="color: var(--danger);">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
@@ -2122,31 +2072,37 @@ function renderAcceptedMovesView() {
       const isTransport = q.serviceMode === 'transporte';
       const serviceTitle = isTransport ? '🚚 SERVICIO DE TRANSPORTE' : '🏠 MUDANZA INTEGRAL';
       const client = q.client || {};
+      const quoteId = String(q.id || 'PRE-000');
+      const quoteIdArg = safeId(quoteId);
+      const clientName = escapeHTML(client.name || 'Cliente Particular');
+      const clientPhone = escapeHTML(client.phone || 'No especificado');
+      const clientOrigin = escapeHTML(client.origin || '-');
+      const clientDestination = escapeHTML(client.destination || '-');
       const totalM3 = Number(q.totalM3 || 0);
       const finalPrice = Number(q.finalPrice || q.suggestedTotal || 0);
       const trucksQty = q.trucks || 1;
       const staffQty = q.staff || 1;
 
       const detailsBox = isTransport
-        ? `<div><i class="fa-solid fa-truck"></i> <strong>Flota Asignada:</strong> ${trucksQty} camión/es (18 m³ con Plataforma)</div>
-           <div><i class="fa-solid fa-boxes-stacked"></i> <strong>Carga:</strong> ${q.transportCargoUnits ? `${q.transportCargoUnits} bultos` : 'Porte directo'} ${q.transportCargoWeight ? `(${q.transportCargoWeight} kg)` : ''}</div>`
-        : `<div><i class="fa-solid fa-boxes-stacked"></i> <strong>Volumen Total:</strong> ${totalM3.toFixed(2)} m³ (${q.totalItems || 0} ítems)</div>
-           <div><i class="fa-solid fa-truck"></i> <strong>Logística:</strong> ${trucksQty} camión/es (18m³) | ${staffQty} mozos (${q.distanceKm || 0} km)</div>`;
+        ? `<div><i class="fa-solid fa-truck"></i> <strong>Flota Asignada:</strong> ${Number(trucksQty) || 1} camión/es (18 m³ con Plataforma)</div>
+           <div><i class="fa-solid fa-boxes-stacked"></i> <strong>Carga:</strong> ${q.transportCargoUnits ? `${escapeHTML(q.transportCargoUnits)} bultos` : 'Porte directo'} ${q.transportCargoWeight ? `(${escapeHTML(q.transportCargoWeight)} kg)` : ''}</div>`
+        : `<div><i class="fa-solid fa-boxes-stacked"></i> <strong>Volumen Total:</strong> ${totalM3.toFixed(2)} m³ (${escapeHTML(q.totalItems || 0)} ítems)</div>
+           <div><i class="fa-solid fa-truck"></i> <strong>Logística:</strong> ${Number(trucksQty) || 1} camión/es (18m³) | ${Number(staffQty) || 1} mozos (${Number(q.distanceKm) || 0} km)</div>`;
 
       cards.push(`
         <div class="accepted-card animated-item">
           <div class="accepted-card-header">
             <div class="accepted-card-title">
-              <h3>${client.name || 'Cliente Particular'}</h3>
-              <p><i class="fa-solid fa-hashtag"></i> ${q.id || 'PRE-000'} • <strong>${serviceTitle}</strong></p>
+              <h3>${clientName}</h3>
+              <p><i class="fa-solid fa-hashtag"></i> ${escapeHTML(quoteId)} • <strong>${serviceTitle}</strong></p>
             </div>
             <span class="status-badge aceptado"><i class="fa-solid fa-circle-check"></i> ACEPTADO</span>
           </div>
 
           <div class="accepted-card-body">
-            <p><i class="fa-solid fa-phone" style="color: var(--primary);"></i> <strong>Teléfono:</strong> ${client.phone || 'No especificado'}</p>
-            <p><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> <strong>Origen:</strong> ${client.origin || '-'}</p>
-            <p><i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> <strong>Destino:</strong> ${client.destination || '-'}</p>
+            <p><i class="fa-solid fa-phone" style="color: var(--primary);"></i> <strong>Teléfono:</strong> ${clientPhone}</p>
+            <p><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> <strong>Origen:</strong> ${clientOrigin}</p>
+            <p><i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> <strong>Destino:</strong> ${clientDestination}</p>
             
             <div style="background: var(--bg-app); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); margin-top: 0.4rem; font-size: 0.82rem;">
               ${detailsBox}
@@ -2160,13 +2116,13 @@ function renderAcceptedMovesView() {
             </div>
 
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-              <button class="btn-action-sm" style="background: #10B981; color: white; font-weight: 700;" onclick="markMoveAsCompleted('${q.id}')" title="Marcar como Servicio Realizado">
+              <button type="button" class="btn-action-sm" style="background: #10B981; color: white; font-weight: 700;" onclick="markMoveAsCompleted(decodeURIComponent('${quoteIdArg}'))" title="Marcar como Servicio Realizado">
                 <i class="fa-solid fa-check-double"></i> Realizado
               </button>
-              <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar Hoja de Trabajo / PDF">
+              <button type="button" class="btn-action-sm" onclick="exportQuotePDFFromRecord(decodeURIComponent('${quoteIdArg}'))" title="Descargar Hoja de Trabajo / PDF">
                 <i class="fa-solid fa-file-pdf"></i> Hoja PDF
               </button>
-              <a class="btn-action-sm" style="background: #25D366; color: white;" href="https://wa.me/${(client.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${client.name || ''}, le confirmamos los detalles de su servicio con MG Transporte y Logística.`)}" target="_blank" title="Contactar por WhatsApp">
+              <a class="btn-action-sm" style="background: #25D366; color: white;" href="https://wa.me/${(client.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${String(client.name || '')}, le confirmamos los detalles de su servicio con MG Transporte y Logística.`)}" target="_blank" rel="noopener noreferrer" title="Contactar por WhatsApp">
                 <i class="fa-brands fa-whatsapp"></i> WhatsApp
               </a>
             </div>
@@ -2258,34 +2214,36 @@ function renderStatisticsDashboard() {
     } else if (status === 'Completado' || status === 'Realizada') {
       statusBadge = '<span class="status-badge completado" style="background: #D1FAE5; color: #065F46;"><i class="fa-solid fa-circle-check"></i> Realizado</span>';
     } else {
-      statusBadge = `<span class="status-badge en_proceso">${status}</span>`;
+      statusBadge = `<span class="status-badge en_proceso">${escapeHTML(status)}</span>`;
     }
 
     const client = q.client || {};
+    const quoteId = String(q.id || 'PRE-000');
+    const quoteIdArg = safeId(quoteId);
     const totalM3 = Number(q.totalM3 || 0);
     const finalPrice = Number(q.finalPrice || q.suggestedTotal || 0);
-    const vehicleText = `${q.trucks || 1} camión/es (18 m³) con Plataforma`;
-    const dateText = q.completedDate || client.date || q.formattedDate || '-';
+    const vehicleText = `${Number(q.trucks) || 1} camión/es (18 m³) con Plataforma`;
+    const dateText = escapeHTML(q.completedDate || client.date || q.formattedDate || '-');
 
     return `
       <tr>
         <td>
           <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
-            <strong style="color: var(--primary);">${q.id || 'PRE-000'}</strong>
+            <strong style="color: var(--primary);">${escapeHTML(quoteId)}</strong>
             ${modeBadge}
           </div>
           ${statusBadge}
         </td>
         <td>
-          <strong>${client.name || 'Cliente Particular'}</strong><br>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">${client.phone || '-'}</span>
+          <strong>${escapeHTML(client.name || 'Cliente Particular')}</strong><br>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">${escapeHTML(client.phone || '-')}</span>
         </td>
         <td>
           <strong>${dateText}</strong>
         </td>
         <td style="font-size: 0.82rem;">
-          <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${truncateText(client.origin || 'Madrid', 20)}<br>
-          <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> ${truncateText(client.destination || 'España', 20)}
+          <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${escapeHTML(truncateText(client.origin || 'Madrid', 20))}<br>
+          <i class="fa-solid fa-flag-checkered" style="color: var(--success);"></i> ${escapeHTML(truncateText(client.destination || 'España', 20))}
         </td>
         <td>
           <strong>${totalM3.toFixed(2)} m³</strong><br>
@@ -2298,7 +2256,7 @@ function renderStatisticsDashboard() {
           ${finalPrice.toFixed(2)} €
         </td>
         <td style="text-align: center;">
-          <button class="btn-action-sm" onclick="exportQuotePDFFromRecord('${q.id}')" title="Descargar Comprobante PDF">
+          <button type="button" class="btn-action-sm" onclick="exportQuotePDFFromRecord(decodeURIComponent('${quoteIdArg}'))" title="Descargar Comprobante PDF">
             <i class="fa-solid fa-file-pdf"></i> PDF
           </button>
         </td>
@@ -2626,32 +2584,7 @@ function truncateText(str, maxLength = 25) {
 // ==========================================================================
 
 function initInvoiceModule() {
-  const formLogin = document.getElementById('form-invoice-login');
-  if (formLogin) {
-    formLogin.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const user = document.getElementById('input-login-user')?.value.trim();
-      const pass = document.getElementById('input-login-pass')?.value.trim();
-      const errEl = document.getElementById('login-error-msg');
-
-      if ((user === 'carlos' || user === 'admin') && (pass === 'mg2026' || pass === 'admin')) {
-        state.invoiceAuth.isAuthenticated = true;
-        state.invoiceAuth.currentUser = user;
-        localStorage.setItem('mg_invoice_auth', 'true');
-        localStorage.setItem('mg_invoice_user', user);
-        if (errEl) errEl.style.display = 'none';
-        
-        // Cerrar modal si estaba abierto
-        const modal = document.getElementById('modal-invoice-login');
-        if (modal) modal.classList.remove('active');
-
-        checkInvoiceAuthState();
-        switchToInvoiceMode();
-      } else {
-        if (errEl) errEl.style.display = 'block';
-      }
-    });
-  }
+  state.invoiceAuth.isAuthenticated = true;
 
   // Escuchadores de IVA e IRPF
   const checkIva = document.getElementById('check-invoice-iva');
@@ -2742,19 +2675,19 @@ function renderInvoiceItems() {
     return `
       <tr style="background: ${idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'};">
         <td style="padding: 0.6rem 0.75rem;">
-          <input type="text" class="invoice-input-row" value="${item.description.replace(/"/g, '&quot;')}" onchange="updateInvoiceItemField('${item.id}', 'description', this.value)" placeholder="Descripción o fecha y ruta (ej: 07-07 Ruta Toledo)...">
+          <input type="text" class="invoice-input-row" value="${escapeHTML(item.description)}" onchange="updateInvoiceItemField(decodeURIComponent('${safeId(item.id)}'), 'description', this.value)" placeholder="Descripción o fecha y ruta (ej: 07-07 Ruta Toledo)...">
         </td>
         <td style="padding: 0.6rem 0.75rem; text-align: center;">
-          <input type="number" class="invoice-input-row" style="text-align: center; width: 65px;" value="${item.qty}" min="1" step="1" onchange="updateInvoiceItemField('${item.id}', 'qty', this.value)">
+          <input type="number" class="invoice-input-row" style="text-align: center; width: 65px;" value="${Number(item.qty) || 1}" min="1" step="1" onchange="updateInvoiceItemField(decodeURIComponent('${safeId(item.id)}'), 'qty', this.value)">
         </td>
         <td style="padding: 0.6rem 0.75rem; text-align: right;">
-          <input type="number" class="invoice-input-row" style="text-align: right; width: 95px; font-weight: 600;" value="${item.unitPrice}" min="0" step="5" onchange="updateInvoiceItemField('${item.id}', 'unitPrice', this.value)">
+          <input type="number" class="invoice-input-row" style="text-align: right; width: 95px; font-weight: 600;" value="${Number(item.unitPrice) || 0}" min="0" step="5" onchange="updateInvoiceItemField(decodeURIComponent('${safeId(item.id)}'), 'unitPrice', this.value)">
         </td>
         <td style="padding: 0.6rem 0.75rem; text-align: right; font-weight: 700; color: var(--primary); font-size: 0.92rem;">
           ${totalLine.toFixed(2)} €
         </td>
         <td style="padding: 0.6rem 0.75rem; text-align: center;">
-          <button type="button" class="btn-action-sm" style="color: var(--danger); border-color: #FECACA;" onclick="deleteInvoiceItemRow('${item.id}')" title="Eliminar fila">
+          <button type="button" class="btn-action-sm" style="color: var(--danger); border-color: #FECACA;" onclick="deleteInvoiceItemRow(decodeURIComponent('${safeId(item.id)}'))" title="Eliminar fila">
             <i class="fa-solid fa-trash"></i>
           </button>
         </td>
@@ -2973,6 +2906,8 @@ function renderInvoicesHistoryTable() {
 
   tbody.innerHTML = state.savedInvoices.map(inv => {
     const isPaid = inv.status === 'Cobrada';
+    const invoiceId = String(inv.id || '');
+    const invoiceIdArg = safeId(invoiceId);
     const statusBadge = isPaid
       ? '<span class="status-badge aceptado"><i class="fa-solid fa-check"></i> COBRADA</span>'
       : '<span class="status-badge pendiente"><i class="fa-solid fa-clock"></i> PENDIENTE</span>';
@@ -2981,26 +2916,26 @@ function renderInvoicesHistoryTable() {
 
     return `
       <tr>
-        <td><strong style="color: var(--primary);">${inv.id}</strong></td>
-        <td>${inv.date}</td>
+        <td><strong style="color: var(--primary);">${escapeHTML(invoiceId)}</strong></td>
+        <td>${escapeHTML(inv.date || '')}</td>
         <td>
-          <strong>${inv.clientName}</strong><br>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">${inv.clientAddress || '-'}</span>
+          <strong>${escapeHTML(inv.clientName || 'Cliente Particular')}</strong><br>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">${escapeHTML(inv.clientAddress || '-')}</span>
         </td>
-        <td>${inv.clientNif}</td>
-        <td style="font-weight: 600;">${inv.subtotal.toFixed(2)} €</td>
+        <td>${escapeHTML(inv.clientNif || '-')}</td>
+        <td style="font-weight: 600;">${Number(inv.subtotal || 0).toFixed(2)} €</td>
         <td style="font-size: 0.8rem; color: var(--text-muted);">${taxesDesc}</td>
-        <td style="font-weight: 800; color: var(--primary); font-size: 1rem;">${inv.grandTotal.toFixed(2)} €</td>
+        <td style="font-weight: 800; color: var(--primary); font-size: 1rem;">${Number(inv.grandTotal || 0).toFixed(2)} €</td>
         <td>${statusBadge}</td>
         <td style="text-align: center;">
           <div style="display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-action-sm" onclick="exportSavedInvoiceToPDF('${inv.id}')" title="Descargar Factura PDF">
+            <button type="button" class="btn-action-sm" onclick="exportSavedInvoiceToPDF(decodeURIComponent('${invoiceIdArg}'))" title="Descargar Factura PDF">
               <i class="fa-solid fa-file-pdf"></i>
             </button>
-            <button class="btn-action-sm" onclick="toggleInvoicePaidStatus('${inv.id}')" title="Alternar Estado Cobrado">
+            <button type="button" class="btn-action-sm" onclick="toggleInvoicePaidStatus(decodeURIComponent('${invoiceIdArg}'))" title="Alternar Estado Cobrado">
               <i class="fa-solid ${isPaid ? 'fa-arrow-rotate-left' : 'fa-check'}"></i>
             </button>
-            <button class="btn-action-sm" onclick="deleteSavedInvoice('${inv.id}')" title="Eliminar" style="color: var(--danger);">
+            <button type="button" class="btn-action-sm" onclick="deleteSavedInvoice(decodeURIComponent('${invoiceIdArg}'))" title="Eliminar" style="color: var(--danger);">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
