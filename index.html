@@ -61,10 +61,10 @@
         </div>
       </a>
       <div class="header-actions">
-        <!-- Indicador de Sincronización en la Nube Multi-dispositivo -->
-        <button type="button" class="btn-cloud-sync" id="btn-cloud-sync" onclick="openSyncModal()" title="Sincronización en la Nube Multi-dispositivo Activa">
+        <!-- Estado de almacenamiento: no se transmiten datos sin un backend seguro -->
+        <button type="button" class="btn-cloud-sync" id="btn-cloud-sync" onclick="openSyncModal()" title="Los datos se guardan únicamente en este navegador">
           <span class="sync-indicator-dot" id="sync-indicator-dot"></span>
-          <span class="sync-text" id="sync-status-label">Nube Conectada</span>
+          <span class="sync-text" id="sync-status-label">Guardado local</span>
           <i class="fa-solid fa-arrows-rotate sync-icon-spin" id="sync-icon-spin"></i>
         </button>
 
@@ -75,18 +75,18 @@
           <i class="fa-solid fa-envelope"></i> admon@mygtransporteylogistica.com
         </a>
 
-        <!-- Botón de Iniciar Sesión / Estado de Sesión en la Barra Azul Superior -->
+        <!-- Acceso local a facturación: GitHub Pages no debe simular autenticación -->
         <div id="header-auth-container" style="display: flex; align-items: center; gap: 0.5rem;">
           <button type="button" class="btn-contact-quick" id="btn-header-login" onclick="openLoginModal()" style="background: #FFFFFF; color: var(--primary); font-weight: 700; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.18); cursor: pointer;">
-            <i class="fa-solid fa-key" style="color: var(--primary);"></i> Iniciar Sesión Facturación
+            <i class="fa-solid fa-file-invoice" style="color: var(--primary);"></i> Facturación local
           </button>
           
           <div id="header-auth-user" style="display: none; align-items: center; gap: 0.5rem;">
             <span style="background: rgba(255,255,255,0.22); color: white; padding: 0.4rem 0.85rem; border-radius: 50px; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
-              <i class="fa-solid fa-user-check" style="color: #6EE7B7;"></i> Carlos Andrés López
+              <i class="fa-solid fa-laptop" style="color: #6EE7B7;"></i> Facturación local
             </span>
             <button type="button" class="btn-contact-quick" onclick="logoutInvoiceAdmin()" style="background: #EF4444; color: white; border: none; font-weight: 600; cursor: pointer; padding: 0.4rem 0.75rem;">
-              <i class="fa-solid fa-power-off"></i> Salir y Volver al Cotizador
+              <i class="fa-solid fa-arrow-left"></i> Volver al cotizador
             </button>
           </div>
         </div>
@@ -94,38 +94,38 @@
     </div>
 
     <!-- Navegación de Pestañas Públicas (Cotizador, Historial, Aceptadas, Estadísticas) -->
-    <div class="top-nav-bar" id="public-top-nav-bar">
+    <nav class="top-nav-bar" id="public-top-nav-bar" aria-label="Navegación principal">
       <div class="top-nav-container">
-        <button class="top-tab active" id="tab-btn-cotizador" onclick="switchMainTab('cotizador')">
+        <button type="button" class="top-tab active" id="tab-btn-cotizador" onclick="switchMainTab('cotizador')">
           <i class="fa-solid fa-calculator"></i> Cotizador de Servicio
         </button>
-        <button class="top-tab" id="tab-btn-historial" onclick="switchMainTab('historial')">
+        <button type="button" class="top-tab" id="tab-btn-historial" onclick="switchMainTab('historial')">
           <i class="fa-solid fa-list-check"></i> Historial Presupuestos
           <span class="top-tab-badge" id="history-count-badge">0</span>
         </button>
-        <button class="top-tab" id="tab-btn-aceptadas" onclick="switchMainTab('aceptadas')">
+        <button type="button" class="top-tab" id="tab-btn-aceptadas" onclick="switchMainTab('aceptadas')">
           <i class="fa-solid fa-handshake-angle"></i> Servicios Aceptados
           <span class="top-tab-badge" id="accepted-count-badge" style="background: var(--success); color: white;">0</span>
         </button>
-        <button class="top-tab" id="tab-btn-estadisticas" onclick="switchMainTab('estadisticas')">
+        <button type="button" class="top-tab" id="tab-btn-estadisticas" onclick="switchMainTab('estadisticas')">
           <i class="fa-solid fa-chart-line"></i> Estadísticas y Conversión
           <span class="top-tab-badge" id="completed-count-badge" style="background: #3B82F6; color: white;">0</span>
         </button>
       </div>
-    </div>
+    </nav>
 
     <!-- Navegación de las 2 Hojas de Facturación en la Barra Azul Superior -->
-    <div class="top-nav-bar" id="invoice-top-nav-bar" style="display: none; background: rgba(0, 0, 0, 0.28);">
+    <nav class="top-nav-bar" id="invoice-top-nav-bar" aria-label="Navegación de facturación" style="display: none; background: rgba(0, 0, 0, 0.28);">
       <div class="top-nav-container">
         <button type="button" class="top-tab active" id="tab-btn-invoice-emitir" onclick="switchInvoiceSubTab('emitir')">
           <i class="fa-solid fa-file-invoice"></i> 1. Emitir Factura Oficial
         </button>
         <button type="button" class="top-tab" id="tab-btn-invoice-registro" onclick="switchInvoiceSubTab('registro')">
           <i class="fa-solid fa-folder-open"></i> 2. Facturas Emitidas y Registro
-          <span class="top-tab-badge" id="invoices-subtab-badge" style="background: #10B981; color: white;">3</span>
+          <span class="top-tab-badge" id="invoices-subtab-badge" style="background: #10B981; color: white;">0</span>
         </button>
       </div>
-    </div>
+    </nav>
   </header>
 
   <!-- VISTA 1: COTIZADOR DE SERVICIO (MUDANZA INTEGRAL VS SOLO TRANSPORTE) -->
@@ -907,19 +907,19 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- VISTA 5: MÓDULO DE FACTURACIÓN OFICIAL (PROTEGIDO POR CREDENCIALES) -->
+  <!-- VISTA 5: MÓDULO DE FACTURACIÓN LOCAL -->
   <!-- ================================================================= -->
   <div id="view-facturacion" style="display: none; width: 100%; max-width: 1550px; margin: 1.25rem auto; padding: 0 1.25rem;">
 
-    <!-- 1. PANTALLA DE ACCESO / LOGIN DE FACTURACIÓN -->
-    <div id="invoice-login-wrapper" style="display: flex; justify-content: center; align-items: center; min-height: 520px; width: 100%; padding: 2rem 1rem;">
+    <!-- Pantalla informativa de reserva; no simula autenticación en un sitio estático. -->
+    <div id="invoice-login-wrapper" style="display: none; justify-content: center; align-items: center; min-height: 520px; width: 100%; padding: 2rem 1rem;">
       <div class="card-section" style="max-width: 460px; width: 100%; padding: 2.5rem; text-align: center; border-top: 5px solid var(--primary); box-shadow: var(--shadow-lg); background: white; border-radius: var(--radius-lg);">
         <div style="width: 70px; height: 70px; background: #EBF4FC; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.2rem auto; box-shadow: 0 4px 12px rgba(0, 93, 170, 0.15);">
           <i class="fa-solid fa-lock"></i>
         </div>
-        <h2 style="font-size: 1.35rem; color: var(--dark); font-weight: 700; margin-bottom: 0.4rem;">Acceso al Módulo de Facturación</h2>
+        <h2 style="font-size: 1.35rem; color: var(--dark); font-weight: 700; margin-bottom: 0.4rem;">Facturación local</h2>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.6rem; line-height: 1.4;">
-          Área administrativa protegida para la emisión de facturas oficiales, liquidación de IVA/IRPF y cobros de <strong>Carlos Andrés López</strong>.
+          Esta versión se guarda solo en el navegador y no incluye autenticación ni sincronización. Para datos reales compartidos se necesita un backend seguro.
         </p>
 
         <form id="form-invoice-login" style="text-align: left;">
@@ -1323,7 +1323,7 @@
     </div>
   </div>
 
-  <!-- Modal de Inicio de Sesión de Facturación -->
+  <!-- Modal heredado, no usado: la facturación local abre directamente. -->
   <div class="modal-overlay" id="modal-invoice-login">
     <div class="modal-box" style="max-width: 440px; padding: 2rem; border-top: 5px solid var(--primary);">
       <div class="modal-header">
@@ -1331,13 +1331,13 @@
           <div style="width: 38px; height: 38px; background: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
             <i class="fa-solid fa-lock"></i>
           </div>
-          <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0;">Iniciar Sesión Facturación</h3>
+          <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0;">Facturación local</h3>
         </div>
         <button type="button" class="btn-close-modal" onclick="closeLoginModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.2rem;">
-        Ingrese sus credenciales de administración para acceder al panel de facturación y emisión oficial.
+        La facturación local no solicita ni almacena credenciales.
       </p>
 
       <form id="form-invoice-modal-login" onsubmit="event.preventDefault(); document.getElementById('form-invoice-login').dispatchEvent(new Event('submit'));">
@@ -1358,7 +1358,7 @@
     </div>
   </div>
 
-  <!-- Modal Informativo de Sincronización en la Nube -->
+  <!-- Modal informativo de almacenamiento local -->
   <div class="modal-overlay" id="modal-cloud-sync">
     <div class="modal-box" style="max-width: 450px; padding: 2rem; border-top: 5px solid var(--success);">
       <div class="modal-header">
@@ -1366,36 +1366,36 @@
           <div style="width: 38px; height: 38px; background: #D1FAE5; color: #065F46; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
             <i class="fa-solid fa-cloud-arrow-up"></i>
           </div>
-          <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0;">Sincronización en la Nube</h3>
+          <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0;">Almacenamiento local</h3>
         </div>
         <button type="button" class="btn-close-modal" onclick="closeSyncModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.4;">
-        Tus presupuestos, clientes, mudanzas y facturas se sincronizan en tiempo real en todos tus ordenadores, móviles y tablets.
+        Los presupuestos y facturas se guardan únicamente en este navegador. No se transmiten datos de clientes a servicios externos.
       </p>
 
       <div style="background: #F8FAFC; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
-          <span style="color: var(--text-muted);">Estado del Servidor:</span>
-          <strong style="color: var(--success);" id="modal-sync-server-status"><i class="fa-solid fa-circle-check"></i> En Línea / Conectado</strong>
+          <span style="color: var(--text-muted);">Modo:</span>
+          <strong style="color: var(--primary);" id="modal-sync-server-status"><i class="fa-solid fa-laptop"></i> Solo este dispositivo</strong>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
-          <span style="color: var(--text-muted);">Última sincronización:</span>
-          <strong style="color: var(--dark);" id="modal-sync-last-time">Hace unos segundos</strong>
+          <span style="color: var(--text-muted);">Privacidad:</span>
+          <strong style="color: var(--dark);" id="modal-sync-last-time">No se envía información a Internet</strong>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.84rem;">
-          <span style="color: var(--text-muted);">Presupuestos en Nube:</span>
+          <span style="color: var(--text-muted);">Presupuestos locales:</span>
           <strong style="color: var(--primary);" id="modal-sync-quotes-count">0 presupuestos</strong>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.84rem;">
-          <span style="color: var(--text-muted);">Facturas en Nube:</span>
+          <span style="color: var(--text-muted);">Facturas locales:</span>
           <strong style="color: var(--primary);" id="modal-sync-invoices-count">0 facturas</strong>
         </div>
       </div>
 
-      <button type="button" class="btn-export-pdf" onclick="manualCloudSync(true)" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
-        <i class="fa-solid fa-rotate"></i> Forzar Sincronización Ahora
+      <button type="button" class="btn-export-pdf" onclick="closeSyncModal()" style="background: linear-gradient(135deg, #005DAA 0%, #004785 100%); width: 100%; padding: 0.8rem; cursor: pointer;">
+        <i class="fa-solid fa-check"></i> Entendido
       </button>
     </div>
   </div>
