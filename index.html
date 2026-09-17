@@ -341,18 +341,25 @@
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem;">
 
-            <!-- Tarjeta Camiones (18 m3) -->
+            <!-- Tarjeta Camiones: selector de tipo y cantidad -->
             <div class="logistics-card">
               <div class="logistics-header">
                 <span class="logistics-title">
-                  <i class="fa-solid fa-truck"></i> Camiones Requeridos (18 m³)
+                  <i class="fa-solid fa-truck"></i> Camiones Requeridos
                 </span>
-                <span class="tag-suggested" id="suggested-trucks-text">1 camión 18m³ (Sugerido)</span>
+                <span class="tag-suggested" id="suggested-trucks-text">1 Camión 18 m³ con plataforma (Sugerido)</span>
+              </div>
+              <div class="form-group" style="margin: 0 0 0.8rem;">
+                <label class="form-label" for="select-truck-type" style="font-size: 0.82rem;">Tipo de camión</label>
+                <select id="select-truck-type" class="form-select" style="font-size: 0.88rem; padding: 0.55rem 0.7rem;">
+                  <option value="platform_18">Camión 18 m³ con plataforma</option>
+                  <option value="no_platform_20">Camión 20 m³ sin plataforma</option>
+                </select>
               </div>
               <div class="logistics-control-row">
                 <div class="logistics-info">
-                  <strong id="truck-type-desc">Camión Carrozado 18 m³</strong>
-                  <span>Capacidad estándar 18 m³ por unidad</span>
+                  <strong id="truck-type-desc">Camión 18 m³ con plataforma</strong>
+                  <span id="truck-capacity-desc">Capacidad estándar de 18 m³ por unidad</span>
                 </div>
                 <div class="logistics-stepper">
                   <button class="btn-qty" id="btn-truck-minus">-</button>
@@ -1404,7 +1411,7 @@
 
   <!-- Application Scripts -->
   <script src="inventory-data.js"></script>
-  <script src="app.js?v=pdf-layout-4"></script>
+  <script src="app.js?v=truck-options-5"></script>
 
 </body>
 </html>

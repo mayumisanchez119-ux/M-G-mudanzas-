@@ -36,7 +36,8 @@ let state = {
   pricePackingRate: 6,     // €/m³ embalaje
   priceDisassemblyRate: 40,// € tarifa desmontaje y montaje
 
-  // Truck Fleet capacity (Únicamente Camiones de 18 m³)
+  // Tipo y capacidad del camión seleccionados para mudanzas
+  truckType: 'platform_18',
   truckCapacityM3: 18,
 
   // Coordinates (Default: Madrid)
@@ -121,6 +122,12 @@ function escapeHTML(value) {
 
 function safeId(value) {
   return encodeURIComponent(String(value ?? '')).replace(/'/g, '%27');
+}
+
+function getTruckTypeConfig() {
+  return state.truckType === 'no_platform_20'
+    ? { capacity: 20, label: 'Camión 20 m³ sin plataforma' }
+    : { capacity: 18, label: 'Camión 18 m³ con plataforma' };
 }
 
 // Base de datos integrada de Códigos Postales y Municipios de España
@@ -1592,6 +1599,14 @@ function setupEventListeners() {
     updateCalculations();
   });
 
+  document.getElementById('select-truck-type')?.addEventListener('change', (e) => {
+    state.truckType = e.target.value;
+    state.truckCapacityM3 = getTruckTypeConfig().capacity;
+    state.manualTruckOverride = false;
+    recalculateLogistics();
+    updateCalculations();
+  });
+
   document.getElementById('btn-truck-minus')?.addEventListener('click', () => {
     if (state.userTrucks > 1) {
       state.userTrucks--;
@@ -2046,17 +2061,10 @@ function getTotalItemsCount() {
   return count;
 }
 
-// Logística de Flota con Camiones Estándar de 18 m3 exclusivamente
+// Logística de flota según el tipo de camión elegido.
 function recalculateLogistics() {
   const totalM3 = calculateTotalM3();
-
-  if (totalM3 === 0) {
-    state.suggestedTrucks = 1;
-  } else if (totalM3 <= 18) {
-    state.suggestedTrucks = 1;
-  } else {
-    state.suggestedTrucks = Math.ceil(totalM3 / state.truckCapacityM3);
-  }
+  state.suggestedTrucks = Math.max(1, Math.ceil(totalM3 / state.truckCapacityM3));
 
   if (!state.manualTruckOverride) {
     state.userTrucks = state.suggestedTrucks;
@@ -2157,17 +2165,23 @@ function updateCalculations() {
       }
     }
 
-    document.getElementById('suggested-trucks-text').innerText = `${state.suggestedTrucks} camión/es 18m³ (Sugerido)`;
+    const truckConfig = getTruckTypeConfig();
+    const truckSelector = document.getElementById('select-truck-type');
+    if (truckSelector && truckSelector.value !== state.truckType) truckSelector.value = state.truckType;
+
+    const truckFeature = state.truckType === 'no_platform_20' ? 'sin plataforma' : 'con plataforma';
+    document.getElementById('suggested-trucks-text').innerText = `${state.suggestedTrucks} ${state.suggestedTrucks === 1 ? 'camión' : 'camiones'} de ${truckConfig.capacity} m³ ${truckFeature} (Sugerido)`;
     document.getElementById('val-trucks-qty').innerText = state.userTrucks;
     
     document.getElementById('suggested-staff-text').innerText = `${state.suggestedStaff} operarios (Sugerido)`;
     document.getElementById('val-staff-qty').innerText = state.userStaff;
 
-    let truckDesc = "Camión / Furgón 18 m³";
+    let truckDesc = truckConfig.label;
     if (state.userTrucks > 1) {
-      truckDesc = `Flota de ${state.userTrucks} Camiones (18 m³ c/u - Capacidad ${state.userTrucks * 18} m³)`;
+      truckDesc = `Flota de ${state.userTrucks} vehículos - ${truckConfig.label} c/u (capacidad total ${state.userTrucks * truckConfig.capacity} m³)`;
     }
     document.getElementById('truck-type-desc').innerText = truckDesc;
+    document.getElementById('truck-capacity-desc').innerText = `Capacidad estándar de ${truckConfig.capacity} m³ por unidad`;
 
     document.getElementById('badge-selected-items').innerText = `${totalItems} seleccionados`;
   }
@@ -2278,6 +2292,9 @@ function saveQuoteToHistory() {
     pricePerTruck: isTransport ? state.priceTransportPerTruck : state.pricePerTruck,
     pricePerStaff: state.pricePerStaff,
     trucks: isTransport ? state.transportTrucksQty : state.userTrucks,
+    truckType: isTransport ? 'platform_18' : state.truckType,
+    truckCapacityM3: isTransport ? 18 : state.truckCapacityM3,
+    truckLabel: isTransport ? 'Camión 18 m³ con plataforma' : getTruckTypeConfig().label,
     staff: isTransport ? (state.transportHelpService === 'driver_plus_staff' ? 2 : 1) : state.userStaff,
     transportTrucksQty: isTransport ? state.transportTrucksQty : null,
     priceTransportPerTruck: isTransport ? state.priceTransportPerTruck : null,
@@ -2761,6 +2778,9 @@ function exportToPDF() {
     pricePerTruck: isTransport ? state.priceTransportPerTruck : state.pricePerTruck,
     pricePerStaff: state.pricePerStaff,
     trucks: isTransport ? state.transportTrucksQty : state.userTrucks,
+    truckType: isTransport ? 'platform_18' : state.truckType,
+    truckCapacityM3: isTransport ? 18 : state.truckCapacityM3,
+    truckLabel: isTransport ? 'Camión 18 m³ con plataforma' : getTruckTypeConfig().label,
     staff: isTransport ? (state.transportHelpService === 'driver_plus_staff' ? 2 : 1) : state.userStaff,
     transportTrucksQty: isTransport ? state.transportTrucksQty : null,
     priceTransportPerTruck: isTransport ? state.priceTransportPerTruck : null,
@@ -2791,6 +2811,9 @@ function exportQuotePDFFromRecord(quoteId) {
     pricePerTruck: q.pricePerTruck,
     pricePerStaff: q.pricePerStaff,
     trucks: q.trucks || 1,
+    truckType: q.truckType || 'platform_18',
+    truckCapacityM3: q.truckCapacityM3 || 18,
+    truckLabel: q.truckLabel || 'Camión 18 m³ con plataforma',
     staff: q.staff || 1,
     transportTrucksQty: q.transportTrucksQty,
     priceTransportPerTruck: q.priceTransportPerTruck,
