@@ -2897,10 +2897,10 @@ function generatePDFFromParams(params) {
     // FORMATO SOLO TRANSPORTE: Tabla de Flota 18m3 y Carga
     const trucksCount = params.trucks || 1;
     const cargoData = [
-      ['Flota Asignada (18 m³)', `${trucksCount} Camión/es de 18 m³ con Plataforma Elevadora (${trucksCount * 18} m³ de capacidad)`],
+      ['Flota Asignada (18 m³)', `${trucksCount} Camión/es de 18 m³  (${trucksCount * 18} m³ de capacidad)`],
       ['Cantidad de Bultos / Palets', params.transportCargoUnits ? `${params.transportCargoUnits} unidades` : 'No especificado / Carga directa'],
       ['Peso Estimado de la Carga', params.transportCargoWeight ? `${params.transportCargoWeight} kg` : 'No especificado'],
-      ['Servicio de Asistencia', params.transportHelpService === 'driver_help' ? 'Conductor ayuda en carga y descarga' : (params.transportHelpService === 'driver_plus_staff' ? 'Conductor + 1 Mozo auxiliar de apoyo' : 'Solo conductor / A pie de vehículo (Cliente carga y descarga)')]
+      ['Servicio de Asistencia', params.transportHelpService === 'driver_help' ? 'Conductor ayuda en carga y descarga' : (params.transportHelpService === 'driver_plus_staff' ? 'Conductor + 1 operario auxiliar de apoyo' : 'Solo conductor / A pie de vehículo (Cliente carga y descarga)')]
     ];
 
     doc.autoTable({
@@ -2992,7 +2992,7 @@ function generatePDFFromParams(params) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(147, 197, 253);
-  doc.text('Camiones de 18 m³ y plataforma elevadora', 20, finalY + 13);
+  
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
@@ -3000,12 +3000,12 @@ function generatePDFFromParams(params) {
 
   if (isTransport) {
     doc.text(`• Servicio: Flete / Porte punto a punto (${params.distanceKm} km)`, 20, finalY + 20);
-    doc.text(`• Flota: ${params.trucks || 1} camión/es de 18 m³ con plataforma elevadora`, 20, finalY + 26);
+    
     doc.text(`• Seguro: Cobertura de mercancías en tránsito incluida`, 20, finalY + 32);
   } else {
     doc.text(`• Cubicaje Total: ${params.totalM3.toFixed(2)} m³ (${params.totalItems} objetos)`, 20, finalY + 20);
-    doc.text(`• Flota: ${params.trucks} camión/es de 18 m³ con plataforma elevadora`, 20, finalY + 26);
-    doc.text(`• Personal: ${params.staff} mozo/s de mudanza (${params.distanceKm} km)`, 20, finalY + 32);
+    
+    doc.text(`• Personal: ${params.staff} operario/s de mudanza (${params.distanceKm} km)`, 20, finalY + 32);
   }
 
   doc.setFont('helvetica', 'bold');
@@ -3019,10 +3019,10 @@ function generatePDFFromParams(params) {
 
   if (!params.isManualPrice && params.suggestedTotal === params.finalPrice) {
     doc.text(`Total Calculado: ${params.suggestedTotal.toFixed(2)} €`, 120, finalY + 18);
-    doc.text(`Incluye vehículo 18m³, combustible y peajes`, 120, finalY + 24);
+    
   } else {
     doc.text(`Servicio Directo Personalizado`, 120, finalY + 18);
-    doc.text(`Incluye camión 18m³, conductor y trayecto`, 120, finalY + 24);
+    
   }
 
   doc.setFont('helvetica', 'bold');
@@ -3030,7 +3030,38 @@ function generatePDFFromParams(params) {
   doc.setTextColor(74, 167, 255);
   doc.text(`PRECIO TOTAL: ${params.finalPrice.toFixed(2)} €`, 120, finalY + 32);
 
+  // Observaciones del cliente: se conservan en el PDF solo cuando se han indicado.
+  const observations = String(params.client?.notes || '').trim();
+  if (observations) {
+    let observationsY = finalY + 44;
+    if (observationsY > 242) {
+      doc.addPage();
+      observationsY = 20;
+    }
+
+    doc.autoTable({
+      startY: observationsY,
+      head: [['OBSERVACIONES']],
+      body: [[observations]],
+      headStyles: {
+        fillColor: [0, 93, 170],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      styles: {
+        font: 'helvetica',
+        fontSize: 8.5,
+        cellPadding: 4,
+        textColor: [51, 65, 85],
+        overflow: 'linebreak'
+      },
+      margin: { left: 14, right: 14, bottom: 38 }
+    });
+  }
+
   // Cuadro Inferior de Contacto en el Pie de Página (Limpio y Espacioso)
+  doc.setPage(doc.getNumberOfPages());
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(248, 250, 252);
   doc.roundedRect(14, 265, 182, 22, 2, 2, 'FD');
