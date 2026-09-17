@@ -341,31 +341,39 @@
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem;">
 
-            <!-- Tarjeta Camiones: selector de tipo y cantidad -->
+            <!-- Tarjeta Camiones: flota combinable -->
             <div class="logistics-card">
               <div class="logistics-header">
                 <span class="logistics-title">
                   <i class="fa-solid fa-truck"></i> Camiones Requeridos
                 </span>
-                <span class="tag-suggested" id="suggested-trucks-text">1 Camión 18 m³ con plataforma (Sugerido)</span>
-              </div>
-              <div class="form-group" style="margin: 0 0 0.8rem;">
-                <label class="form-label" for="select-truck-type" style="font-size: 0.82rem;">Tipo de camión</label>
-                <select id="select-truck-type" class="form-select" style="font-size: 0.88rem; padding: 0.55rem 0.7rem;">
-                  <option value="platform_18">Camión 18 m³ con plataforma</option>
-                  <option value="no_platform_20">Camión 20 m³ sin plataforma</option>
-                </select>
+                <span class="tag-suggested" id="suggested-trucks-text">1 camión sugerido</span>
               </div>
               <div class="logistics-control-row">
                 <div class="logistics-info">
-                  <strong id="truck-type-desc">Camión 18 m³ con plataforma</strong>
-                  <span id="truck-capacity-desc">Capacidad estándar de 18 m³ por unidad</span>
+                  <strong>Camión 18 m³ con plataforma</strong>
+                  <span>Capacidad por unidad: 18 m³</span>
                 </div>
                 <div class="logistics-stepper">
-                  <button class="btn-qty" id="btn-truck-minus">-</button>
-                  <span style="font-weight: 700; width: 30px; text-align: center;" id="val-trucks-qty">1</span>
-                  <button class="btn-qty" id="btn-truck-plus">+</button>
+                  <button class="btn-qty" id="btn-truck18-minus" aria-label="Quitar camión de 18 metros cúbicos">-</button>
+                  <span style="font-weight: 700; width: 30px; text-align: center;" id="val-truck18-qty">1</span>
+                  <button class="btn-qty" id="btn-truck18-plus" aria-label="Añadir camión de 18 metros cúbicos">+</button>
                 </div>
+              </div>
+              <div class="logistics-control-row" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+                <div class="logistics-info">
+                  <strong>Camión 20 m³ sin plataforma</strong>
+                  <span>Capacidad por unidad: 20 m³</span>
+                </div>
+                <div class="logistics-stepper">
+                  <button class="btn-qty" id="btn-truck20-minus" aria-label="Quitar camión de 20 metros cúbicos">-</button>
+                  <span style="font-weight: 700; width: 30px; text-align: center;" id="val-truck20-qty">0</span>
+                  <button class="btn-qty" id="btn-truck20-plus" aria-label="Añadir camión de 20 metros cúbicos">+</button>
+                </div>
+              </div>
+              <div class="logistics-info" style="margin-top: 0.85rem;">
+                <strong id="truck-type-desc">1 camión de 18 m³ con plataforma</strong>
+                <span id="truck-capacity-desc">Capacidad total seleccionada: 18 m³</span>
               </div>
             </div>
 
@@ -1411,7 +1419,7 @@
 
   <!-- Application Scripts -->
   <script src="inventory-data.js"></script>
-  <script src="app.js?v=truck-options-5"></script>
+<script src="app.js?v=mixed-trucks-6"></script>
 
 </body>
 </html>
