@@ -36,9 +36,13 @@ let state = {
   pricePackingRate: 6,     // €/m³ embalaje
   priceDisassemblyRate: 40,// € tarifa desmontaje y montaje
 
-  // Tipo y capacidad del camión seleccionados para mudanzas
+  // Flota de camiones seleccionada para mudanzas
   truckType: 'platform_18',
   truckCapacityM3: 18,
+  truckCounts: {
+    platform18: 1,
+    noPlatform20: 0
+  },
 
   // Coordinates (Default: Madrid)
   originCoords: [40.416775, -3.703790], // Sol, Madrid
@@ -124,10 +128,33 @@ function safeId(value) {
   return encodeURIComponent(String(value ?? '')).replace(/'/g, '%27');
 }
 
-function getTruckTypeConfig() {
-  return state.truckType === 'no_platform_20'
+function getTruckTypeConfig(type = state.truckType) {
+  return type === 'no_platform_20'
     ? { capacity: 20, label: 'Camión 20 m³ sin plataforma' }
     : { capacity: 18, label: 'Camión 18 m³ con plataforma' };
+}
+
+function getFleetCapacity() {
+  return (state.truckCounts.platform18 * 18) + (state.truckCounts.noPlatform20 * 20);
+}
+
+function getFleetSummary() {
+  const parts = [];
+  if (state.truckCounts.platform18) {
+    parts.push(`${state.truckCounts.platform18} ${state.truckCounts.platform18 === 1 ? 'camión' : 'camiones'} de 18 m³ con plataforma`);
+  }
+  if (state.truckCounts.noPlatform20) {
+    parts.push(`${state.truckCounts.noPlatform20} ${state.truckCounts.noPlatform20 === 1 ? 'camión' : 'camiones'} de 20 m³ sin plataforma`);
+  }
+  return parts.join(' + ') || 'Sin camiones seleccionados';
+}
+
+function synchronizeTruckFleet() {
+  state.userTrucks = state.truckCounts.platform18 + state.truckCounts.noPlatform20;
+  state.truckCapacityM3 = getFleetCapacity();
+  state.truckType = state.truckCounts.platform18 && state.truckCounts.noPlatform20
+    ? 'mixed'
+    : (state.truckCounts.noPlatform20 ? 'no_platform_20' : 'platform_18');
 }
 
 // Base de datos integrada de Códigos Postales y Municipios de España
@@ -1599,27 +1626,22 @@ function setupEventListeners() {
     updateCalculations();
   });
 
-  document.getElementById('select-truck-type')?.addEventListener('change', (e) => {
-    state.truckType = e.target.value;
-    state.truckCapacityM3 = getTruckTypeConfig().capacity;
-    state.manualTruckOverride = false;
-    recalculateLogistics();
-    updateCalculations();
-  });
+  const updateTruckFleet = (type, change) => {
+    const key = type === 'platform_18' ? 'platform18' : 'noPlatform20';
+    const nextValue = state.truckCounts[key] + change;
+    const currentTotal = state.truckCounts.platform18 + state.truckCounts.noPlatform20;
+    if (nextValue < 0 || (change < 0 && currentTotal <= 1)) return;
 
-  document.getElementById('btn-truck-minus')?.addEventListener('click', () => {
-    if (state.userTrucks > 1) {
-      state.userTrucks--;
-      state.manualTruckOverride = true;
-      updateCalculations();
-    }
-  });
-
-  document.getElementById('btn-truck-plus')?.addEventListener('click', () => {
-    state.userTrucks++;
+    state.truckCounts[key] = nextValue;
+    synchronizeTruckFleet();
     state.manualTruckOverride = true;
     updateCalculations();
-  });
+  };
+
+  document.getElementById('btn-truck18-minus')?.addEventListener('click', () => updateTruckFleet('platform_18', -1));
+  document.getElementById('btn-truck18-plus')?.addEventListener('click', () => updateTruckFleet('platform_18', 1));
+  document.getElementById('btn-truck20-minus')?.addEventListener('click', () => updateTruckFleet('no_platform_20', -1));
+  document.getElementById('btn-truck20-plus')?.addEventListener('click', () => updateTruckFleet('no_platform_20', 1));
 
   document.getElementById('btn-staff-minus')?.addEventListener('click', () => {
     if (state.userStaff > 1) {
@@ -2064,10 +2086,12 @@ function getTotalItemsCount() {
 // Logística de flota según el tipo de camión elegido.
 function recalculateLogistics() {
   const totalM3 = calculateTotalM3();
-  state.suggestedTrucks = Math.max(1, Math.ceil(totalM3 / state.truckCapacityM3));
+  state.suggestedTrucks = Math.max(1, Math.ceil(totalM3 / 18));
 
   if (!state.manualTruckOverride) {
-    state.userTrucks = state.suggestedTrucks;
+    state.truckCounts.platform18 = state.suggestedTrucks;
+    state.truckCounts.noPlatform20 = 0;
+    synchronizeTruckFleet();
   }
 
   if (totalM3 === 0) {
@@ -2165,23 +2189,17 @@ function updateCalculations() {
       }
     }
 
-    const truckConfig = getTruckTypeConfig();
-    const truckSelector = document.getElementById('select-truck-type');
-    if (truckSelector && truckSelector.value !== state.truckType) truckSelector.value = state.truckType;
-
-    const truckFeature = state.truckType === 'no_platform_20' ? 'sin plataforma' : 'con plataforma';
-    document.getElementById('suggested-trucks-text').innerText = `${state.suggestedTrucks} ${state.suggestedTrucks === 1 ? 'camión' : 'camiones'} de ${truckConfig.capacity} m³ ${truckFeature} (Sugerido)`;
-    document.getElementById('val-trucks-qty').innerText = state.userTrucks;
+    const fleetCapacity = getFleetCapacity();
+    const fleetSummary = getFleetSummary();
+    document.getElementById('suggested-trucks-text').innerText = `${state.suggestedTrucks} ${state.suggestedTrucks === 1 ? 'camión sugerido' : 'camiones sugeridos'} (referencia 18 m³)`;
+    document.getElementById('val-truck18-qty').innerText = state.truckCounts.platform18;
+    document.getElementById('val-truck20-qty').innerText = state.truckCounts.noPlatform20;
     
     document.getElementById('suggested-staff-text').innerText = `${state.suggestedStaff} operarios (Sugerido)`;
     document.getElementById('val-staff-qty').innerText = state.userStaff;
 
-    let truckDesc = truckConfig.label;
-    if (state.userTrucks > 1) {
-      truckDesc = `Flota de ${state.userTrucks} vehículos - ${truckConfig.label} c/u (capacidad total ${state.userTrucks * truckConfig.capacity} m³)`;
-    }
-    document.getElementById('truck-type-desc').innerText = truckDesc;
-    document.getElementById('truck-capacity-desc').innerText = `Capacidad estándar de ${truckConfig.capacity} m³ por unidad`;
+    document.getElementById('truck-type-desc').innerText = fleetSummary;
+    document.getElementById('truck-capacity-desc').innerText = `Capacidad total seleccionada: ${fleetCapacity} m³ (${state.userTrucks} ${state.userTrucks === 1 ? 'camión' : 'camiones'})`;
 
     document.getElementById('badge-selected-items').innerText = `${totalItems} seleccionados`;
   }
@@ -2293,8 +2311,8 @@ function saveQuoteToHistory() {
     pricePerStaff: state.pricePerStaff,
     trucks: isTransport ? state.transportTrucksQty : state.userTrucks,
     truckType: isTransport ? 'platform_18' : state.truckType,
-    truckCapacityM3: isTransport ? 18 : state.truckCapacityM3,
-    truckLabel: isTransport ? 'Camión 18 m³ con plataforma' : getTruckTypeConfig().label,
+    truckCapacityM3: isTransport ? 18 : getFleetCapacity(),
+    truckLabel: isTransport ? 'Camión 18 m³ con plataforma' : getFleetSummary(),
     staff: isTransport ? (state.transportHelpService === 'driver_plus_staff' ? 2 : 1) : state.userStaff,
     transportTrucksQty: isTransport ? state.transportTrucksQty : null,
     priceTransportPerTruck: isTransport ? state.priceTransportPerTruck : null,
@@ -2779,8 +2797,8 @@ function exportToPDF() {
     pricePerStaff: state.pricePerStaff,
     trucks: isTransport ? state.transportTrucksQty : state.userTrucks,
     truckType: isTransport ? 'platform_18' : state.truckType,
-    truckCapacityM3: isTransport ? 18 : state.truckCapacityM3,
-    truckLabel: isTransport ? 'Camión 18 m³ con plataforma' : getTruckTypeConfig().label,
+    truckCapacityM3: isTransport ? 18 : getFleetCapacity(),
+    truckLabel: isTransport ? 'Camión 18 m³ con plataforma' : getFleetSummary(),
     staff: isTransport ? (state.transportHelpService === 'driver_plus_staff' ? 2 : 1) : state.userStaff,
     transportTrucksQty: isTransport ? state.transportTrucksQty : null,
     priceTransportPerTruck: isTransport ? state.priceTransportPerTruck : null,
