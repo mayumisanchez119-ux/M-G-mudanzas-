@@ -1,0 +1,34 @@
+name: Keep Supabase active
+
+on:
+  schedule:
+    # Cada dos días a las 09:17 UTC. GitHub puede demorarlo algunos minutos.
+    - cron: '17 9 */2 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  database-activity:
+    name: Consulta mínima a Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Consultar el estado público compartido
+        env:
+          SUPABASE_URL: https://qmwesldfwapsukyjffzb.supabase.co
+          # Es la clave publishable que ya usa la aplicación pública; no tiene privilegios de administración.
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_2fUFLKaUv3taBzaM8lq7kg_hLktUtil
+        run: |
+          curl --fail --silent --show-error --retry 2 --max-time 20 \
+            --get "$SUPABASE_URL/rest/v1/mg_public_sync_state" \
+            --data-urlencode "select=id" \
+            --data-urlencode "id=eq.shared" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            -H "Accept: application/json" \
+            -o /dev/null
