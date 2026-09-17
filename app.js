@@ -3005,7 +3005,8 @@ function generatePDFFromParams(params) {
   } else {
     doc.text(`• Cubicaje Total: ${params.totalM3.toFixed(2)} m³ (${params.totalItems} objetos)`, 20, finalY + 20);
     
-    doc.text(`• Personal: ${params.staff} operario/s de mudanza (${params.distanceKm} km)`, 20, finalY + 32);
+    doc.text(`• Camiones: ${params.trucks || 1}`, 20, finalY + 25);
+    doc.text(`• Personal: ${params.staff} operarios de mudanza`, 20, finalY + 32);
   }
 
   doc.setFont('helvetica', 'bold');
@@ -3032,7 +3033,20 @@ function generatePDFFromParams(params) {
 
   // Observaciones del cliente: se conservan en el PDF solo cuando se han indicado.
   const observations = String(params.client?.notes || '').trim();
-  if (observations) {
+  const hasObservations = Boolean(observations);
+  if (hasObservations) {
+    const observationLines = doc.splitTextToSize(`* Observaciones: ${observations}`, 182);
+    let observationsY = finalY + 44;
+    if (observationsY + (observationLines.length * 4.5) > 258) {
+      doc.addPage();
+      observationsY = 20;
+    }
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(observationLines, 14, observationsY);
+  }
+  if (false && observations) {
     let observationsY = finalY + 44;
     if (observationsY > 242) {
       doc.addPage();
